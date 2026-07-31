@@ -397,14 +397,23 @@ footer{background:var(--bg-2);border-top:1px solid var(--line);margin-top:20px}
 .modal p{color:var(--ink-3);font-size:.86rem;margin:0 0 20px}
 .field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
 .field label{font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
-.field input{padding:12px 14px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font-size:.95rem}
+.field input,.field textarea{padding:12px 14px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font-size:.95rem;font-family:var(--sans);width:100%}
+.field textarea{resize:vertical;min-height:120px;line-height:1.5}
 .modal .x{float:right;background:none;border:none;color:var(--ink-3);font-size:1.4rem;cursor:pointer;line-height:1}
 
-/* ---------- MOBILE MENU ---------- */
-.mmenu{position:fixed;inset:0;z-index:90;background:var(--bg);display:none;flex-direction:column;padding:20px}
+/* ---------- MENU VERDE (igual ao site atual) ---------- */
+.mmenu{position:fixed;inset:0;z-index:90;background:linear-gradient(165deg,#15b473,#0a8b50 70%,#0a7d48);color:#fff;display:none;flex-direction:column;padding:20px 22px 34px;overflow-y:auto}
 .mmenu.show{display:flex}
-.mmenu .mtop{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
-.mmenu a{padding:14px 4px;border-bottom:1px solid var(--line);font-weight:800;font-style:italic;text-transform:uppercase;font-size:1.2rem}
+.mmenu .mtop{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.mmenu .mtop .kicker{color:rgba(255,255,255,.8)}
+.mmenu .mtop .icon-btn{border-color:rgba(255,255,255,.45);color:#fff;background:transparent}
+.mmenu .mgroup{font-family:var(--mono);font-size:.64rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.72);margin:20px 2px 2px;padding-top:8px;border-top:1px solid rgba(255,255,255,.18)}
+.mmenu a{padding:12px 2px;border-bottom:1px solid rgba(255,255,255,.16);font-weight:800;font-style:italic;text-transform:uppercase;font-size:1.12rem;color:#fff}
+.mmenu a:hover{color:#eafff3;padding-left:6px;transition:padding .12s}
+.msocial{display:flex;gap:12px;margin-top:18px}
+.msocial a{width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;padding:0;font-size:.8rem;font-style:normal}
+.msocial a:hover{background:#fff;color:#0a8b50;padding-left:0}
+.mbtns{display:flex;gap:10px;margin:10px 0 4px}
 
 /* ---------- REVEAL ---------- */
 .reveal{opacity:0;transform:translateY(16px);transition:opacity .5s ease, transform .5s ease}
@@ -466,9 +475,9 @@ footer{background:var(--bg-2);border-top:1px solid var(--line);margin-top:20px}
     <nav class="nav-links" id="navlinks">
       <a href="#/" data-r="/">Início</a>
       <a href="#/produtos" data-r="/produtos">Produtos</a>
-      <a href="#/produtos" data-r="/pacotes">Pacotes</a>
       <a href="#/comunidade" data-r="/comunidade">Comunidade</a>
       <a href="#/membros" data-r="/membros">Área de Membros</a>
+      <a href="#/fale" data-r="/fale">Fale com o Danilo</a>
     </nav>
     <div class="nav-actions">
       <button class="icon-btn" id="theme" title="Alternar tema" aria-label="Alternar tema claro/escuro">◐</button>
@@ -516,6 +525,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--line);margin-top:20px}
     <div>
       <h5>Fale com o Danilo</h5>
       <ul>
+        <li><a href="#/fale">Deixar uma mensagem</a></li>
         <li><a href="https://wa.me/55SEUNUMERO" target="_blank" rel="noopener">WhatsApp</a></li>
         <li><a href="#/membros">Área de Membros</a></li>
         <li><a href="#/produtos">Anuncie conosco</a></li>
@@ -545,16 +555,34 @@ footer{background:var(--bg-2);border-top:1px solid var(--line);margin-top:20px}
     <span class="kicker">Menu</span>
     <button class="icon-btn" id="mclose" aria-label="Fechar menu">×</button>
   </div>
-  <div style="display:flex;gap:10px;margin-bottom:18px">
-    <button class="btn btn-ghost btn-block" id="m-login">Entrar</button>
-    <a class="btn btn-green btn-block" href="#/produtos">Seja Membro</a>
+  <div class="mbtns">
+    <button class="btn btn-block" id="m-login" style="background:transparent;border:1.6px solid rgba(255,255,255,.65);color:#fff">Entrar</button>
+    <a class="btn btn-block" href="#/produtos" style="background:#fff;color:#0a8b50">Seja Membro</a>
   </div>
+
+  <div class="mgroup">Editorias</div>
   <a href="#/">Início</a>
+  <a href="#/">Futebol Goiano</a>
+  <a href="#/">Futebol Brasileiro</a>
+  <a href="#/">Futebol Internacional</a>
+  <a href="#/">Mais Esporte</a>
+  <a href="#/">Automobilismo</a>
+  <a href="#/">Placar Ao Vivo</a>
+
+  <div class="mgroup">Produtos</div>
   <a href="#/produtos">Produtos</a>
   <a href="#/produtos">Pacotes</a>
   <a href="#/comunidade">Comunidade</a>
   <a href="#/membros">Área de Membros</a>
-  <a href="https://wa.me/55SEUNUMERO" target="_blank" rel="noopener">Fale com o Danilo</a>
+  <a href="#/fale">Fale com o Danilo</a>
+
+  <div class="mgroup">Social Mídia</div>
+  <div class="msocial">
+    <a href="https://www.instagram.com/programaplacaresportivo/" target="_blank" rel="noopener" aria-label="Instagram">IG</a>
+    <a href="#" aria-label="Facebook">FB</a>
+    <a href="#" aria-label="Twitter/X">X</a>
+    <a href="#" aria-label="YouTube">YT</a>
+  </div>
 </div>
 
 <script>
@@ -937,6 +965,12 @@ function pageProdutos(){
       <span class="kicker">Catálogo completo</span>
       <h1 class="broadcast" style="font-size:clamp(2.2rem,5vw,3.6rem);margin:10px 0 0">Produtos & <span style="color:var(--red)">pacotes</span></h1>
       <p style="color:var(--ink-2);max-width:56ch;margin:16px 0 0">Cada produto tem sua própria página de venda: o torcedor conhece, escolhe e vai direto pra plataforma pagar, baixar o material ou entrar no grupo.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px">
+        <a class="chip" style="cursor:pointer" onclick="document.querySelector('.pack-grid')&&document.querySelector('.pack-grid').scrollIntoView({behavior:'smooth'})">Pacotes</a>
+        <a href="#/comunidade" class="chip" style="cursor:pointer">Comunidade</a>
+        <a href="#/membros" class="chip" style="cursor:pointer">Área de Membros</a>
+        <a href="#/fale" class="chip green" style="cursor:pointer">Fale com o Danilo</a>
+      </div>
     </div>
   </section>
 
@@ -1172,6 +1206,40 @@ function pageMembros(){
   <div style="height:30px"></div>`;
 }
 
+function pageFale(){
+  return `
+  <section class="p-hero">
+    <div class="flood"></div>
+    <div class="wrap"><div class="crumbs"><a href="#/">Início</a> / <a href="#/produtos">Produtos</a> / Fale com o Danilo</div></div>
+    <div class="wrap inner">
+      <div class="reveal">
+        <span class="chip green">Resposta pessoal do Danilo</span>
+        <h1 class="broadcast">Fale com o <span style="color:var(--red)">Danilo</span></h1>
+        <p class="lead">Deixe uma mensagem. <b>Eu mesmo, Danilo Dias, vou te responder.</b> É só deixar seu e-mail que a resposta chega direto na sua caixa de entrada.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <a href="${WA}" target="_blank" rel="noopener" class="btn btn-ghost">WhatsApp</a>
+          <a href="https://www.instagram.com/programaplacaresportivo/" target="_blank" rel="noopener" class="btn btn-ghost">Instagram</a>
+        </div>
+        <div class="bio-facts" style="margin-top:24px">
+          <div class="f"><b>18h30</b><span>ao vivo, seg a sex</span></div>
+          <div class="f"><b>Pessoal</b><span>quem responde é o Danilo</span></div>
+        </div>
+      </div>
+      <div class="buybox reveal">
+        <form id="fale-form" onsubmit="return PE_fale(event)">
+          <div class="field"><label>Seu nome</label><input type="text" name="nome" required placeholder="Como você quer ser chamado"></div>
+          <div class="field"><label>Seu e-mail (a resposta vai pra cá)</label><input type="email" name="email" required placeholder="voce@email.com"></div>
+          <div class="field"><label>Seu time (opcional)</label><input type="text" name="time" placeholder="Goiás, Vila Nova, Atlético..."></div>
+          <div class="field"><label>Sua mensagem pro Danilo</label><textarea name="msg" required placeholder="Manda sua pergunta, opinião ou sugestão..."></textarea></div>
+          <button class="btn btn-green btn-lg btn-block" type="submit">Enviar mensagem pro Danilo</button>
+          <p class="mono" style="font-size:.68rem;color:var(--ink-3);text-align:center;margin-top:12px">O Danilo responde no e-mail que você deixar acima.</p>
+        </form>
+        <div id="fale-ok" style="display:none"></div>
+      </div>
+    </div>
+  </section>`;
+}
+
 function pageNotFound(){
   return `<section class="section"><div class="wrap" style="text-align:center;padding:80px 0">
     <h1 class="broadcast" style="font-size:4rem;color:var(--red)">404</h1>
@@ -1190,6 +1258,7 @@ function render(){
   else if(parts[0]==="produtos"){html=pageProdutos();route="/produtos";}
   else if(parts[0]==="comunidade"){html=pageComunidade();route="/comunidade";}
   else if(parts[0]==="membros"){html=pageMembros();route="/membros";}
+  else if(parts[0]==="fale"){html=pageFale();route="/fale";}
   else if(parts[0]==="p" && parts[1]){html=pageProduct(parts[1]);route="/produtos";}
   else {html=pageNotFound();}
   view.innerHTML = html;
@@ -1276,6 +1345,24 @@ $("#hamb").addEventListener("click",()=>mmenu.classList.add("show"));
 $("#mclose").addEventListener("click",closeMenus);
 $("#m-login").addEventListener("click",()=>{closeMenus();openModal();});
 mmenu.querySelectorAll("a").forEach(a=>a.addEventListener("click",closeMenus));
+
+// "Fale com o Danilo" — confirma o envio (na publicação, ligar a um serviço de formulário/e-mail)
+window.PE_fale = function(e){
+  e.preventDefault();
+  const f = e.target;
+  const email = (f.querySelector('input[name=email]')||{}).value || "seu e-mail";
+  const nome = (f.querySelector('input[name=nome]')||{}).value || "";
+  f.style.display = "none";
+  const ok = document.getElementById("fale-ok");
+  ok.style.display = "block";
+  ok.innerHTML = `<div style="text-align:center;padding:14px 6px">
+    <div style="font-size:2.6rem">✅</div>
+    <h3 class="broadcast" style="margin:10px 0 6px">Mensagem enviada${nome?", "+esc(nome):""}!</h3>
+    <p style="color:var(--ink-2)">O Danilo vai te responder em <b>${esc(email)}</b>. Fica de olho na caixa de entrada. 📩</p>
+    <a href="#/produtos" class="btn btn-green" style="margin-top:16px">Ver os produtos do Danilo</a>
+  </div>`;
+  return false;
+};
 
 // troca o time da área de membros (veste as cores) e mantém a escolha
 window.PE_setTeam = function(id){
