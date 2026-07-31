@@ -359,6 +359,20 @@ header.top{position:sticky;top:0;z-index:60;background:color-mix(in srgb,var(--b
 .locked-card .btn{position:relative;z-index:1}
 .demo-switch{margin-top:26px;padding:16px;border:1px dashed var(--line);border-radius:var(--radius-s);background:var(--surface);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .demo-switch .lbl{font-family:var(--mono);font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+/* cards de área por time (produtos) */
+.team-areas{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.ta-card{border-radius:var(--radius);overflow:hidden;border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow);display:flex;flex-direction:column;transition:transform .14s ease}
+.ta-card:hover{transform:translateY(-4px)}
+.ta-top{padding:22px;color:#fff;position:relative}
+.ta-top .exc{display:inline-block;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.38);color:#fff;padding:5px 11px;border-radius:999px;font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;font-weight:700}
+.ta-top h3{font-weight:900;font-style:italic;text-transform:uppercase;font-size:1.55rem;margin:14px 0 2px;letter-spacing:-.01em}
+.ta-top .ap{font-family:var(--mono);font-size:.68rem;opacity:.92;text-transform:uppercase;letter-spacing:.14em}
+.ta-body{padding:20px 22px 22px;display:flex;flex-direction:column;flex:1}
+.ta-body .price{display:flex;align-items:baseline;gap:4px;margin-bottom:16px}
+.ta-body .price .cur{font-family:var(--mono);font-weight:700;font-size:.9rem;color:var(--ink-2)}
+.ta-body .price .val{font-family:var(--mono);font-weight:800;font-size:2.3rem;line-height:1;letter-spacing:-.02em}
+.ta-body .price .cyc{font-family:var(--mono);font-size:.8rem;color:var(--ink-3)}
+@media (max-width:960px){.team-areas{grid-template-columns:1fr}}
 @media (max-width:960px){.dash{grid-template-columns:1fr}.locked-grid{grid-template-columns:1fr}}
 
 /* ---------- FOOTER ---------- */
@@ -919,12 +933,39 @@ function pageProdutos(){
 
   <section class="section">
     <div class="wrap">
+      <div class="section-head"><div><span class="kicker">Cada torcida, sua área exclusiva</span><h2 class="section-title">Escolha a área do <span class="accent">seu time</span><div class="hr-red"></div></h2></div><span class="chip">acesso exclusivo · só o seu time</span></div>
+      <div class="team-areas reveal">
+        ${Object.entries(TEAMS).map(([id,v])=>`
+        <div class="ta-card">
+          <div class="ta-top" style="background:${v.grad}">
+            <span class="exc">🔐 Área exclusiva</span>
+            <h3>Área do ${esc(v.nome)}</h3>
+            <div class="ap">${esc(v.apelido)}</div>
+          </div>
+          <div class="ta-body">
+            <div class="price"><span class="cur">R$</span><span class="val" style="color:${v.c}">19,90</span><span class="cyc">/mês</span></div>
+            <ul class="feat">
+              <li>Notícias do ${esc(v.nome)} em primeira mão</li>
+              <li>Grupo VIP só de torcedor do ${esc(v.nome)}</li>
+              <li>Lives e análises focadas no seu time</li>
+              <li>Área fechada — sem torcedor rival</li>
+            </ul>
+            <a href="${PAY}" target="_blank" rel="noopener" class="btn btn-block" style="background:${v.c};color:#fff">Assinar a área do ${esc(v.nome)}</a>
+          </div>
+        </div>`).join("")}
+      </div>
+      <p class="mono" style="font-size:.72rem;color:var(--ink-3);margin-top:14px;text-align:center">Cada área é uma assinatura independente. Quer acompanhar dois times? São duas áreas.</p>
+    </div>
+  </section>
+
+  <section class="section" style="background:var(--bg-2);border-top:1px solid var(--line)">
+    <div class="wrap">
       <div class="section-head"><div><span class="kicker">Assinaturas · recorrência</span><h2 class="section-title">Os <span class="accent">pacotes</span><div class="hr-red"></div></h2></div></div>
       <div class="pack-grid reveal">${PACKAGES.map(packCard).join("")}</div>
     </div>
   </section>
 
-  <section class="section" style="background:var(--bg-2);border-top:1px solid var(--line)">
+  <section class="section">
     <div class="wrap">
       <div class="section-head"><div><span class="kicker">Produtos individuais</span><h2 class="section-title">Mentorias & <span class="accent">materiais</span><div class="hr-red"></div></h2></div></div>
       <div class="lineup reveal">${PRODUCTS.map(prodCard).join("")}</div>
