@@ -150,6 +150,22 @@ header.top{position:sticky;top:0;z-index:60;background:color-mix(in srgb,var(--b
 .icon-btn:hover{border-color:var(--ink-3)}
 .hamb{display:none}
 
+/* barra de editorias do portal (fiel ao site atual) */
+.portal-bar{border-top:1px solid var(--line);background:var(--bg-2)}
+.portal-inner{max-width:var(--maxw);margin:0 auto;display:flex;gap:2px;padding:0 12px;overflow-x:auto;scrollbar-width:none}
+.portal-inner::-webkit-scrollbar{display:none}
+.pnav{position:relative}
+.pnav>a,.pnav>button{background:none;border:none;cursor:pointer;color:var(--ink-2);font-weight:800;font-size:.74rem;
+  letter-spacing:.06em;text-transform:uppercase;padding:12px 14px;white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
+.pnav>a:hover,.pnav>button:hover{color:var(--red)}
+.pnav .caret{font-size:.6rem;color:var(--ink-3)}
+.pmenu{position:absolute;top:100%;left:0;min-width:210px;background:var(--surface);border:1px solid var(--line);
+  border-radius:0 0 12px 12px;box-shadow:var(--shadow-lg);padding:8px;display:none;z-index:70}
+.pnav:hover .pmenu,.pnav:focus-within .pmenu{display:block}
+.pmenu a{display:block;padding:9px 12px;border-radius:8px;font-size:.82rem;font-weight:600;color:var(--ink-2)}
+.pmenu a:hover{background:var(--surface-2);color:var(--red)}
+@media (max-width:960px){.portal-bar{display:none}}
+
 /* ---------- HERO ---------- */
 .hero{position:relative;overflow:hidden;background:var(--bg-2);border-bottom:1px solid var(--line)}
 .hero .flood{position:absolute;inset:0;pointer-events:none;
@@ -385,12 +401,16 @@ footer{background:var(--bg-2);border-top:1px solid var(--line);margin-top:20px}
   </div>
   <div class="navbar">
     <a href="#/" class="brand" aria-label="Placar Esportivo — início">
-      <svg class="shield" viewBox="0 0 60 68" aria-hidden="true">
-        <path d="M30 2 56 12v22c0 16-11 27-26 32C15 61 4 50 4 34V12z" fill="var(--blue)"/>
-        <path d="M30 2 56 12v22c0 16-11 27-26 32C15 61 4 50 4 34V12z" fill="none" stroke="var(--red)" stroke-width="3"/>
-        <rect x="4" y="27" width="52" height="11" fill="var(--red)"/>
-        <circle cx="30" cy="32" r="9" fill="#fff"/>
-        <path d="M30 25l2.6 2-1 3.2h-3.2l-1-3.2z" fill="var(--blue)"/>
+      <svg class="shield" viewBox="0 0 120 134" aria-hidden="true">
+        <path d="M60 20 L108 34 V72 C108 102 86 120 60 130 C34 120 12 102 12 72 V34 Z" fill="#173a8c"/>
+        <path d="M60 27 L101 39 V72 C101 98 82 112 60 121 C38 112 19 98 19 72 V39 Z" fill="#e11f2b"/>
+        <circle cx="60" cy="24" r="21" fill="#fff" stroke="#111" stroke-width="1.5"/>
+        <path d="M60 11 l7 5 -2.6 8 -8.8 0 -2.6 -8z" fill="#111"/>
+        <circle cx="45" cy="32" r="3.2" fill="#111"/><circle cx="75" cy="32" r="3.2" fill="#111"/>
+        <rect x="12" y="49" width="96" height="26" rx="13" fill="#e11f2b" stroke="#fff" stroke-width="2.5"/>
+        <text x="60" y="68" text-anchor="middle" fill="#fff" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="18" letter-spacing="1.5">PLACAR</text>
+        <path d="M16 81 h88 l-9 19 h-70z" fill="#cfd4dc" stroke="#fff" stroke-width="1.5"/>
+        <text x="60" y="96" text-anchor="middle" fill="#173a8c" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="13.5" letter-spacing="1">ESPORTIVO</text>
       </svg>
       <span class="brand-name"><b>PLACAR ESPORTIVO</b><span>COM DANILO DIAS</span></span>
     </a>
@@ -408,6 +428,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--line);margin-top:20px}
       <button class="icon-btn hamb" id="hamb" aria-label="Abrir menu">☰</button>
     </div>
   </div>
+  <nav class="portal-bar" id="portal-bar" aria-label="Editorias do portal"></nav>
 </header>
 
 <main id="view"></main>
@@ -417,10 +438,10 @@ footer{background:var(--bg-2);border-top:1px solid var(--line);margin-top:20px}
   <div class="wrap foot">
     <div>
       <div class="brand" style="margin-bottom:14px">
-        <svg class="shield" viewBox="0 0 60 68" aria-hidden="true"><path d="M30 2 56 12v22c0 16-11 27-26 32C15 61 4 50 4 34V12z" fill="var(--blue)"/><rect x="4" y="27" width="52" height="11" fill="var(--red)"/><circle cx="30" cy="32" r="9" fill="#fff"/></svg>
+        <svg class="shield" viewBox="0 0 120 134" aria-hidden="true"><path d="M60 20 L108 34 V72 C108 102 86 120 60 130 C34 120 12 102 12 72 V34 Z" fill="#173a8c"/><path d="M60 27 L101 39 V72 C101 98 82 112 60 121 C38 112 19 98 19 72 V39 Z" fill="#e11f2b"/><circle cx="60" cy="24" r="21" fill="#fff" stroke="#111" stroke-width="1.5"/><path d="M60 11 l7 5 -2.6 8 -8.8 0 -2.6 -8z" fill="#111"/><rect x="12" y="49" width="96" height="26" rx="13" fill="#e11f2b" stroke="#fff" stroke-width="2.5"/><text x="60" y="68" text-anchor="middle" fill="#fff" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="18" letter-spacing="1.5">PLACAR</text><path d="M16 81 h88 l-9 19 h-70z" fill="#cfd4dc" stroke="#fff" stroke-width="1.5"/><text x="60" y="96" text-anchor="middle" fill="#173a8c" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="13.5" letter-spacing="1">ESPORTIVO</text></svg>
         <span class="brand-name"><b>PLACAR ESPORTIVO</b><span>COM DANILO DIAS</span></span>
       </div>
-      <p>O Placar Esportivo com Danilo Dias é um programa diário de análises, debates e opiniões sobre futebol, com foco no cenário goiano e nos principais acontecimentos do esporte no Brasil e no mundo. Direto e opinativo.</p>
+      <p>O Placar Esportivo com Danilo Dias é um programa diário que traz análises, debates e opiniões sobre o futebol, com foco no cenário goiano e nos principais acontecimentos do esporte no Brasil e do mundo. Direto e opinativo, mistura informação com discussão para quem acompanha o dia a dia dos clubes e campeonatos.</p>
       <div class="socials">
         <a href="#" aria-label="Instagram">IG</a>
         <a href="#" aria-label="Facebook">FB</a>
@@ -605,17 +626,52 @@ const PRODUCTS = [
   }
 ];
 
-const NEWS_FEAT = {tag:"Destaque",title:"Brasil aparece entre os principais favoritos ao título; veja ranking atualizado",meta:"01 ABR 2026 · Seleção"};
+/* --- CONTEÚDO REAL DO PORTAL (extraído das telas do site atual) --- */
+const NEWS_FEAT = {tag:"Destaque",title:"Brasil aparece entre os principais favoritos ao título; veja ranking atualizado",sub:"“The Athletic” avalia todas as equipes classificadas para o Mundial e aponta Ancelotti como trunfo para a Seleção brigar pelo título.",meta:"1 de abril de 2026 · Seleção"};
 const MAIS_LIDOS = [
-  {t:"F1: Mercedes vai atrás de Max Verstappen, segundo jornal italiano",m:"6 min · Automobilismo"},
+  {t:"F1: Mercedes vai atrás de Max Verstappen segundo jornal italiano",m:"6 min · Automobilismo"},
   {t:"Série B: Goiás vira sobre a Chapecoense no fim e segue líder",m:"4 min · Brasileirão"},
   {t:"Mundial: Botafogo bate o PSG em uma noite histórica",m:"5 min · Internacional"},
+  {t:"Fórmula 1: Hamilton estende má fase na Ferrari, seu pior início de carreira",m:"5 min · Automobilismo"},
   {t:"Copa: Brasil vence o Paraguai e garante vaga para 2026",m:"5 min · Seleção"}
 ];
 const NEWS_BR = [
-  {t:"PC Oliveira avalia lance e considera correto o gol do Palmeiras",m:"75 views",g:"g2"},
-  {t:"Goiás x Criciúma: guia completo do confronto, com horário e transmissão",m:"53 views",g:"g4"},
-  {t:"Santos reconhece dívida milionária com Neymar e vincula CT como garantia",m:"60 views",g:"g3"}
+  {n:1,t:"PC Oliveira avalia lance e considera correto o gol do Palmeiras contra o Bahia",m:"75 views · 0 comentários",g:"g2"},
+  {n:2,t:"Goiás x Criciúma: guia completo do confronto, com horário e transmissão",m:"53 views · 0 comentários",g:"g4"},
+  {n:3,t:"Santos reconhece dívida milionária com Neymar e vincula CT da base como garantia",m:"60 views · 0 comentários",g:"g3"},
+  {n:4,t:"Pedrinho se posiciona sobre polêmicas e reforça respeito ao Vasco",m:"27 views · 0 comentários",g:"g1"},
+  {n:5,t:"Londrina e Goiás empatam nos acréscimos em duelo equilibrado pela Série B",m:"55 views · 0 comentários",g:"g4"},
+  {n:6,t:"Allan admite falha após expulsão e gesto obsceno na derrota do Corinthians",m:"45 views · 0 comentários",g:"g3"}
+];
+const NEWS_INT = [
+  {t:"Vini Jr. aparece entre os principais candidatos à Bola de Ouro 2026",m:"Brasileiro aparece em décimo lugar na lista do “The Athletic”, enquanto Harry Kane lidera."},
+  {t:"Da quinta divisão à elite: como o Wrexham foi reconstruído por investidores de Hollywood",m:"Clube galês subiu três divisões em cinco anos, agora a um passo dos playoffs da elite inglesa."},
+  {t:"PSG lidera lista dos maiores salários da Ligue 1; confira os valores",m:"Dembélé, do Paris Saint-Germain, lidera a lista de atletas mais bem pagos."}
+];
+const NEWS_AUTO = [
+  {t:"F1: Mercedes vai atrás de Max Verstappen segundo jornal italiano",g:"g3"},
+  {t:"Piloto da F1, Hamilton participa de demonstração com Kim Kardashian em evento no Japão",g:"g4"},
+  {t:"Antonelli faz história e é o primeiro italiano em 73 anos a vencer duas corridas seguidas na F1",g:"g2"},
+  {t:"Chefe de Bearman avalia acidente a 262 km/h como erro de julgamento",g:"g1"}
+];
+const NEWS_MAIS = [
+  {t:"Laura Raupp participa do Aloha Podcast em entrevista especial",m:"Surfe",g:"g2"},
+  {t:"Mitchell aplica drible desconcertante e brilha em triunfo dos Cavaliers",m:"Basquete",g:"g4"},
+  {t:"Bia Haddad anuncia Carlos Martínez Comet como novo treinador",m:"Tênis",g:"g1"}
+];
+const LIVE_VIDS = [
+  {t:"Remo estreia na Copa Norte com elenco alternativo em busca de oportunidades",m:"Danilo Dias · Programa Placar Esportivo"},
+  {t:"Peneira, testes e últimas chances",m:"Assista no YouTube"}
+];
+/* Menu do portal — fiel ao site atual */
+const PORTAL_NAV = [
+  {label:"Placar Esportivo", href:"#/"},
+  {label:"Futebol Goiano", sub:["Atlético","Goiás","Vila Nova","Times do Interior"]},
+  {label:"Futebol Brasileiro", sub:["Brasileirão Série A","Brasileirão Série B","Série C e D"]},
+  {label:"Futebol Internacional", sub:["Futebol Europeu","Futebol de Seleções","Copa Libertadores","Copa Sul-Americana"]},
+  {label:"Mais Esporte", sub:["Basquete","Tênis","Vôlei"]},
+  {label:"Automobilismo", href:"#/"},
+  {label:"Placar Ao Vivo", sub:["Programa Ao Vivo","Cortes"]}
 ];
 
 /* =========================================================
@@ -702,7 +758,7 @@ function pageHome(){
     </div>
   </section>
 
-  <!-- PORTAL / NOTÍCIAS -->
+  <!-- PORTAL / NOTÍCIAS (fiel ao site atual) -->
   <section class="section">
     <div class="wrap">
       <div class="section-head reveal">
@@ -712,14 +768,55 @@ function pageHome(){
       <div class="news-grid reveal">
         <article class="card">
           <div class="thumb">🏆<span class="chip red" style="position:absolute;top:12px;left:12px">${NEWS_FEAT.tag}</span></div>
-          <div class="body"><h3>${esc(NEWS_FEAT.title)}</h3><div class="meta"><span>${NEWS_FEAT.meta}</span></div></div>
+          <div class="body"><h3>${esc(NEWS_FEAT.title)}</h3><p style="color:var(--ink-2);font-size:.88rem;margin:8px 0 0">${esc(NEWS_FEAT.sub)}</p><div class="meta"><span>${NEWS_FEAT.meta}</span></div></div>
         </article>
         <div class="card" style="padding:16px 18px">
           <span class="kicker">Mais lidos</span>
           <ul class="mais-lidos">${MAIS_LIDOS.map((n,i)=>`<li><span class="rk">${i+1}</span><div><h4>${esc(n.t)}</h4><div class="meta">${n.m}</div></div></li>`).join("")}</ul>
         </div>
         <div style="display:flex;flex-direction:column;gap:20px">
-          ${NEWS_BR.slice(0,2).map(n=>`<article class="card"><div class="thumb ${n.g}" style="aspect-ratio:16/7">⚽</div><div class="body"><h3 style="font-size:.94rem">${esc(n.t)}</h3><div class="meta"><span>${n.m}</span></div></div></article>`).join("")}
+          ${NEWS_AUTO.slice(0,2).map(n=>`<article class="card"><div class="thumb ${n.g}" style="aspect-ratio:16/7">🏎️</div><div class="body"><h3 style="font-size:.94rem">${esc(n.t)}</h3><div class="meta"><span>Placar da Velocidade</span></div></div></article>`).join("")}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FUTEBOL BRASILEIRO (lista ranqueada, como no site) -->
+  <section class="section" style="padding-top:0">
+    <div class="wrap">
+      <div class="section-head reveal"><div><span class="kicker">→</span><h2 class="section-title" style="font-size:1.6rem">Futebol <span class="accent">Brasileiro</span></h2></div></div>
+      <div class="reveal" style="display:grid;grid-template-columns:1fr 1fr;gap:10px 34px">
+        ${NEWS_BR.map(n=>`<div style="display:flex;gap:16px;padding:14px 0;border-bottom:1px solid var(--line)"><span class="rk" style="font-family:var(--mono);font-weight:800;font-size:1.6rem;color:var(--red);line-height:1">${n.n}</span><div><h4 style="margin:0;font-size:.95rem;line-height:1.3">${esc(n.t)}</h4><div class="meta" style="font-family:var(--mono);font-size:.66rem;color:var(--ink-3);margin-top:6px">${n.m}</div></div></div>`).join("")}
+      </div>
+    </div>
+  </section>
+
+  <!-- CAMPEONATOS INTERNACIONAIS -->
+  <section class="section" style="padding-top:0">
+    <div class="wrap">
+      <div class="section-head reveal"><div><span class="kicker">→</span><h2 class="section-title" style="font-size:1.6rem">Campeonatos <span class="accent">Internacionais</span></h2></div></div>
+      <div class="lineup reveal">
+        ${NEWS_INT.map(n=>`<article class="card"><div class="body" style="padding:18px"><h3 style="font-size:1.05rem">${esc(n.t)}</h3><p style="color:var(--ink-2);font-size:.86rem;margin:10px 0 0">${esc(n.m)}</p></div></article>`).join("")}
+      </div>
+    </div>
+  </section>
+
+  <!-- PROGRAMA AO VIVO -->
+  <section class="section" style="background:var(--bg-2);border-block:1px solid var(--line)">
+    <div class="wrap">
+      <div class="section-head reveal"><div><span class="live"><span class="dot"></span>PROGRAMA AO VIVO · SEG A SEX · 18H30</span><h2 class="section-title">No <span class="accent">ar</span> com Danilo Dias<div class="hr-red"></div></h2></div><a href="#/comunidade" class="btn btn-ghost">Mais vídeos</a></div>
+      <div class="news-grid reveal">
+        <article class="card">
+          <div class="thumb g4" style="aspect-ratio:16/9">▶<span class="chip red" style="position:absolute;top:12px;left:12px">Programa</span></div>
+          <div class="body"><h3>${esc(LIVE_VIDS[0].t)}</h3><div class="meta"><span>${esc(LIVE_VIDS[0].m)}</span></div></div>
+        </article>
+        <article class="card">
+          <div class="thumb g3" style="aspect-ratio:16/9">▶<span class="chip" style="position:absolute;top:12px;left:12px">YouTube</span></div>
+          <div class="body"><h3>${esc(LIVE_VIDS[1].t)}</h3><div class="meta"><span>${esc(LIVE_VIDS[1].m)}</span></div></div>
+        </article>
+        <div class="card" style="padding:18px;display:flex;flex-direction:column;justify-content:center;gap:12px">
+          <span class="kicker">Mais Esporte</span>
+          <ul class="mais-lidos" style="gap:0">${NEWS_MAIS.map((n,i)=>`<li><span class="rk" style="font-size:1rem;color:var(--blue)">${["🏄","🏀","🎾"][i]}</span><div><h4 style="font-size:.86rem">${esc(n.t)}</h4><div class="meta">${n.m}</div></div></li>`).join("")}</ul>
         </div>
       </div>
     </div>
@@ -731,6 +828,7 @@ function pageHome(){
       <div>
         <span class="kicker">Quem apresenta</span>
         <p class="quote">“Eu não li o jogo pela TV. Eu li de <span class="accent">dentro de campo</span>, por 17 anos. É isso que eu trago pra você.”</p>
+        <p style="font-family:var(--mono);font-size:.66rem;color:var(--ink-3);margin-top:-6px">↳ sugestão de fala — ajuste com as palavras do Danilo</p>
         <div class="bio-facts">
           <div class="f"><b>17</b><span>anos como atleta profissional</span></div>
           <div class="f"><b>Diário</b><span>programa ao vivo, seg a sex</span></div>
@@ -1058,6 +1156,13 @@ function closeMenus(){mmenu.classList.remove("show");}
 $("#hamb").addEventListener("click",()=>mmenu.classList.add("show"));
 $("#mclose").addEventListener("click",closeMenus);
 mmenu.querySelectorAll("a").forEach(a=>a.addEventListener("click",closeMenus));
+
+// barra de editorias do portal (fiel ao site atual)
+$("#portal-bar").innerHTML = `<div class="portal-inner">${PORTAL_NAV.map(n=>
+  n.sub ? `<div class="pnav"><button>${esc(n.label)} <span class="caret">▾</span></button>
+      <div class="pmenu">${n.sub.map(s=>`<a href="#/">${esc(s)}</a>`).join("")}</div></div>`
+        : `<div class="pnav"><a href="${n.href||'#/'}">${esc(n.label)}</a></div>`
+).join("")}</div>`;
 
 // footer produtos + ano
 $("#foot-prod").innerHTML = PRODUCTS.slice(0,5).map(p=>`<li><a href="#/p/${p.slug}">${esc(p.nome)}</a></li>`).join("");
