@@ -340,7 +340,26 @@ header.top{position:sticky;top:0;z-index:60;background:color-mix(in srgb,var(--b
 .access a{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-s);padding:14px 16px}
 .access a:hover{border-color:var(--team)}
 .access .ic{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;background:var(--surface-2)}
-@media (max-width:960px){.dash{grid-template-columns:1fr}}
+/* faixa de exclusividade */
+.mhero{border-radius:var(--radius);padding:20px 24px;color:#fff;background:var(--team-grad);display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:20px}
+.mhero .exc{display:flex;align-items:center;gap:12px}
+.mhero .exc .em{font-size:1.7rem}
+.mhero b{font-weight:900;font-style:italic;text-transform:uppercase;font-size:1.3rem;display:block;line-height:1}
+.mhero .lock{font-family:var(--mono);font-size:.7rem;opacity:.88;margin-top:5px}
+.mhero .tag-exc{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);color:#fff;padding:6px 12px;border-radius:999px;font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700}
+/* áreas trancadas (rivais) */
+.locked-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.locked-card{position:relative;background:var(--surface-2);border:1px dashed var(--line);border-radius:var(--radius-s);padding:18px;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.locked-card::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 12px,rgba(120,138,161,.06) 12px,rgba(120,138,161,.06) 24px);pointer-events:none}
+.locked-card .lk{display:flex;align-items:center;gap:12px;position:relative;z-index:1}
+.locked-card .pad{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;background:var(--surface);border:1px solid var(--line)}
+.locked-card .lk b{display:block;font-weight:800}
+.locked-card .lk .tm{font-family:var(--mono);font-size:.64rem;text-transform:uppercase;letter-spacing:.08em}
+.locked-card p{margin:0;font-size:.84rem;color:var(--ink-3);position:relative;z-index:1}
+.locked-card .btn{position:relative;z-index:1}
+.demo-switch{margin-top:26px;padding:16px;border:1px dashed var(--line);border-radius:var(--radius-s);background:var(--surface);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.demo-switch .lbl{font-family:var(--mono);font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+@media (max-width:960px){.dash{grid-template-columns:1fr}.locked-grid{grid-template-columns:1fr}}
 
 /* ---------- FOOTER ---------- */
 footer{background:var(--bg-2);border-top:1px solid var(--line);margin-top:20px}
@@ -681,7 +700,8 @@ const TEAMS = {
   goias:   {nome:"Goiás",     apelido:"Esmeraldino", c:"#009B3A", c2:"#00602a", grad:"linear-gradient(120deg,#00A544,#00532a)"},
   atletico:{nome:"Atlético",  apelido:"Dragão",      c:"#E4002B", c2:"#0a0a0a", grad:"linear-gradient(120deg,#E4002B,#0a0a0a)"}
 };
-let currentTeam = "vilanova";
+// time do assinante (na vida real vem do pagamento; aqui simulado). O membro é de UM time só.
+let currentTeam = "goias";
 try{const s=localStorage.getItem("pe-team");if(s&&TEAMS[s])currentTeam=s;}catch(e){}
 
 /* Menu do portal — fiel ao site atual */
@@ -1030,52 +1050,71 @@ function pageComunidade(){
 }
 
 function pageMembros(){
-  const t = TEAMS[currentTeam] || TEAMS.vilanova;
-  const chips = Object.entries(TEAMS).map(([id,v])=>
+  const t = TEAMS[currentTeam] || TEAMS.goias;
+  const others = Object.entries(TEAMS).filter(([id])=>id!==currentTeam);
+  const rival = currentTeam==='goias' ? 'Vila Nova' : 'Goiás';
+  const demoChips = Object.entries(TEAMS).map(([id,v])=>
     `<button class="team-chip ${id===currentTeam?'on':''}" style="--tc:${v.c}" onclick="PE_setTeam('${id}')">
        <span class="sw" style="background:${v.grad}"></span>${esc(v.nome)}</button>`).join("");
-  const rival = currentTeam==='goias' ? 'Vila Nova' : 'Goiás';
+  const lockedCards = others.map(([id,v])=>`
+    <div class="locked-card">
+      <div class="lk"><span class="pad" style="color:${v.c}">🔒</span><div><b>Área do ${esc(v.nome)}</b><span class="tm" style="color:${v.c}">${esc(v.apelido)} · exclusiva</span></div></div>
+      <p>Conteúdo exclusivo dos assinantes do ${esc(v.nome)}. Você é torcedor do ${esc(t.nome)} — <strong>sem acesso</strong> a esta área.</p>
+      <a href="#/p/pacote-torcedor" class="btn btn-ghost" style="align-self:flex-start">Assinar a área do ${esc(v.nome)}</a>
+    </div>`).join("");
   return `
   <section class="wrap">
-    <div class="crumbs"><a href="#/">Início</a> / Área de Membros</div>
-    <div class="team-pick">
-      <span class="lbl">Seu time</span>${chips}
-      <span class="mono" style="font-size:.68rem;color:var(--ink-3);margin-left:auto">a área veste as cores do seu time</span>
-    </div>
+    <div class="crumbs"><a href="#/">Início</a> / Área de Membros / ${esc(t.nome)}</div>
     <div class="dash" style="--team:${t.c};--team2:${t.c2};--team-grad:${t.grad}">
       <aside class="side">
-        <div class="me"><div class="av">${esc(t.nome[0])}</div><div><b style="font-size:.9rem">Torcedor do ${esc(t.nome)}</b><div class="mono" style="font-size:.66rem;color:var(--ink-3)">Pacote Mesa VIP</div></div></div>
+        <div class="me"><div class="av">${esc(t.nome[0])}</div><div><b style="font-size:.9rem">Torcedor do ${esc(t.nome)}</b><div class="mono" style="font-size:.66rem;color:var(--ink-3)">Pacote Torcedor · ${esc(t.nome)}</div></div></div>
         <nav>
           <a class="on" href="#/membros">▦ Painel</a>
-          <a href="#/comunidade">💬 Meus grupos</a>
+          <a href="#/comunidade">💬 Meu grupo</a>
           <a href="#/produtos">▶ Conteúdos</a>
           <a href="#/produtos">⬇ Downloads</a>
           <a href="#/produtos">⚙ Assinatura</a>
         </nav>
       </aside>
       <div class="dash-main">
+        <div class="mhero">
+          <div class="exc"><span class="em">🔐</span><div><b>Área exclusiva do ${esc(t.nome)}</b><div class="lock">Acesso liberado só pra assinantes do ${esc(t.nome)}. Áreas de outros times são separadas.</div></div></div>
+          <span class="tag-exc">Acesso exclusivo</span>
+        </div>
+
         <div class="plan-strip">
-          <div><span class="kicker">${esc(t.nome)} · ${esc(t.apelido)} · seu plano</span><div class="broadcast" style="font-size:1.6rem">Mesa VIP</div><div class="mono" style="font-size:.72rem">Renova em 22 dias · R$ 49,90/mês</div></div>
+          <div><span class="kicker">${esc(t.nome)} · ${esc(t.apelido)} · seu plano</span><div class="broadcast" style="font-size:1.6rem">Pacote Torcedor</div><div class="mono" style="font-size:.72rem">Renova em 22 dias · R$ 19,90/mês</div></div>
           <a href="#/produtos" class="btn" style="background:#fff;color:${t.c}">Fazer upgrade</a>
         </div>
 
         <div>
           <div class="section-head" style="margin-bottom:14px"><h2 class="section-title" style="font-size:1.3rem">Tudo do ${esc(t.nome)} em primeira mão</h2></div>
           <div class="lib">
-            <div class="item"><div class="tp">🎥</div><div class="tx"><h4>Mesa com Danilo — Ep. 12</h4><span>LIVE · 48 min</span></div></div>
-            <div class="item"><div class="tp">📋</div><div class="tx"><h4>Análise tática: ${esc(t.nome)} x ${esc(rival)}</h4><span>VÍDEO · 15 min</span></div></div>
-            <div class="item"><div class="tp">📘</div><div class="tx"><h4>E-book — O Jogo por Dentro</h4><span>PDF · baixar</span></div></div>
+            <div class="item"><div class="tp">🎥</div><div class="tx"><h4>Mesa com Danilo — ${esc(t.nome)}</h4><span>LIVE · 48 min</span></div></div>
+            <div class="item"><div class="tp">📋</div><div class="tx"><h4>Análise: ${esc(t.nome)} x ${esc(rival)}</h4><span>VÍDEO · 15 min</span></div></div>
+            <div class="item"><div class="tp">📰</div><div class="tx"><h4>Bastidores do ${esc(t.nome)}</h4><span>NOTÍCIA · 1ª mão</span></div></div>
           </div>
         </div>
 
         <div>
           <div class="section-head" style="margin-bottom:14px"><h2 class="section-title" style="font-size:1.3rem">Acesso rápido</h2></div>
           <div class="access">
-            <a href="${WA}" target="_blank" rel="noopener"><span class="ic">💬</span><div><b>Grupo VIP do ${esc(t.nome)}</b><div class="mono" style="font-size:.66rem;color:var(--ink-3)">toque para abrir</div></div></a>
+            <a href="${WA}" target="_blank" rel="noopener"><span class="ic">💬</span><div><b>Grupo VIP do ${esc(t.nome)}</b><div class="mono" style="font-size:.66rem;color:var(--ink-3)">só torcedor do ${esc(t.nome)}</div></div></a>
             <a href="${TG}" target="_blank" rel="noopener"><span class="ic">✈️</span><div><b>Canal no Telegram</b><div class="mono" style="font-size:.66rem;color:var(--ink-3)">toque para abrir</div></div></a>
             <a href="#/comunidade"><span class="ic">📅</span><div><b>Agenda das lives</b><div class="mono" style="font-size:.66rem;color:var(--ink-3)">próxima: quarta 20h</div></div></a>
             <a href="#/produtos"><span class="ic">⭐</span><div><b>Participe Comigo</b><div class="mono" style="font-size:.66rem;color:var(--ink-3)">upgrade p/ Craque</div></div></a>
           </div>
+        </div>
+
+        <div>
+          <div class="section-head" style="margin-bottom:14px"><div><span class="kicker">Fechadas pra você</span><h2 class="section-title" style="font-size:1.3rem">Outras áreas de torcida</h2></div></div>
+          <div class="locked-grid">${lockedCards}</div>
+        </div>
+
+        <div class="demo-switch">
+          <span class="lbl">👁 Só demonstração — ver a área como torcedor de:</span>
+          ${demoChips}
+          <span class="mono" style="font-size:.62rem;color:var(--ink-3);flex-basis:100%">Na prática, o assinante real enxerga só o time dele; este seletor existe pra você mostrar as 3 telas na apresentação.</span>
         </div>
       </div>
     </div>
