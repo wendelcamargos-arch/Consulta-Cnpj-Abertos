@@ -245,8 +245,14 @@ header.top{position:sticky;top:0;z-index:60;background:color-mix(in srgb,var(--b
 .lineup{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
 .prod{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);transition:transform .14s ease, border-color .14s ease;display:flex;flex-direction:column}
 .prod:hover{transform:translateY(-4px);border-color:var(--red)}
-.prod .cap{aspect-ratio:16/8;display:flex;align-items:center;justify-content:center;font-size:2.4rem;color:#fff;position:relative}
-.prod .cap .cat{position:absolute;top:12px;left:12px}
+.prod .cap{aspect-ratio:16/8;position:relative;overflow:hidden;background:#0b1020}
+.prod .cap svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.prod .cap .cat{position:absolute;top:12px;left:12px;z-index:2}
+.scene-box{position:relative;overflow:hidden;border-radius:12px;background:#0b1020}
+.scene-box svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.bb-scene{aspect-ratio:16/7;margin-bottom:16px}
+.scene-box.play::after{content:"";position:absolute;z-index:2;top:50%;left:50%;transform:translate(-50%,-50%);width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,.42);border:2px solid rgba(255,255,255,.9)}
+.scene-box.play::before{content:"";position:absolute;z-index:3;top:50%;left:50%;transform:translate(-38%,-50%);border-style:solid;border-width:9px 0 9px 15px;border-color:transparent transparent transparent #fff}
 .prod .p-body{padding:16px 18px 20px;display:flex;flex-direction:column;flex:1}
 .prod h3{margin:0;font-size:1.12rem;font-weight:900;font-style:italic;text-transform:uppercase;letter-spacing:-.01em}
 .prod .tl{color:var(--ink-2);font-size:.9rem;margin:7px 0 14px;flex:1}
@@ -774,6 +780,82 @@ const view = $("#view");
 const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const prodBySlug = s => PRODUCTS.find(p=>p.slug===s);
 
+/* ---------- CENAS ILUSTRADAS (substituem os emojis por arte vetorial) ---------- */
+let __sn = 0;
+function sceneSVG(type,c1,c2,acc){
+  const id = "s"+(__sn++);
+  const crowd = (rows,baseY)=>{let o="";for(let r=0;r<rows;r++){const y=baseY-r*12;for(let x=6;x<400;x+=15){const j=((x*7+r*11)%5)-2;o+=`<circle cx="${x+j}" cy="${y}" r="3.1" fill="rgba(255,255,255,${(0.05+0.02*r).toFixed(2)})"/>`;}}return o;};
+  const base = `<defs>
+    <linearGradient id="${id}g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient>
+    <radialGradient id="${id}f" cx="0.5" cy="0.02" r="0.85"><stop offset="0" stop-color="rgba(255,255,255,.42)"/><stop offset="1" stop-color="rgba(255,255,255,0)"/></radialGradient>
+  </defs>
+  <rect width="400" height="220" fill="url(#${id}g)"/>
+  <polygon points="64,0 132,120 104,220 0,220 0,0" fill="rgba(255,255,255,.05)"/>
+  <polygon points="336,0 268,120 296,220 400,220 400,0" fill="rgba(255,255,255,.05)"/>
+  <rect width="400" height="220" fill="url(#${id}f)" opacity=".55"/>`;
+  const fig=(x,y,col)=>`<g fill="${col}"><circle cx="${x}" cy="${y}" r="11"/><path d="M${x-11} ${y+52} q11 -30 11 -30 q0 0 11 30 z"/></g><g stroke="${col}" stroke-width="7" stroke-linecap="round"><line x1="${x-7}" y1="${y+16}" x2="${x-24}" y2="${y-14}"/><line x1="${x+7}" y1="${y+16}" x2="${x+24}" y2="${y-14}"/></g>`;
+  let fg="";
+  switch(type){
+    case "crowd":
+      fg = crowd(7,206) + `<g transform="rotate(-7 200 120)"><rect x="104" y="104" width="192" height="30" rx="9" fill="${acc}"/><rect x="104" y="104" width="192" height="10" rx="9" fill="rgba(255,255,255,.28)"/><rect x="150" y="112" width="100" height="6" rx="3" fill="rgba(255,255,255,.35)"/></g>`;
+      break;
+    case "studio":
+      fg = crowd(3,208) + `<g fill="rgba(255,255,255,.94)"><rect x="182" y="40" width="36" height="72" rx="18"/></g>
+        <g stroke="${c2}" stroke-width="2.4" opacity=".55"><line x1="187" y1="54" x2="213" y2="54"/><line x1="187" y1="64" x2="213" y2="64"/><line x1="187" y1="74" x2="213" y2="74"/><line x1="187" y1="84" x2="213" y2="84"/><line x1="187" y1="94" x2="213" y2="94"/></g>
+        <path d="M168 92 a32 32 0 0 0 64 0" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="4"/>
+        <rect x="196" y="112" width="8" height="42" fill="rgba(255,255,255,.9)"/><rect x="170" y="154" width="60" height="9" rx="4" fill="rgba(255,255,255,.9)"/>
+        <circle cx="330" cy="60" r="6" fill="${acc}"/>`;
+      break;
+    case "tactics":
+      fg = `<rect x="34" y="34" width="332" height="152" rx="8" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.28)"/>
+        <line x1="200" y1="34" x2="200" y2="186" stroke="rgba(255,255,255,.22)"/><circle cx="200" cy="110" r="26" fill="none" stroke="rgba(255,255,255,.22)"/>
+        <path d="M104 84 C 160 54, 210 60, 246 78" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="7 7"/>
+        <path d="M240 74 l10 4 -3 -11 z" fill="#fff"/>
+        <circle cx="104" cy="84" r="8" fill="${acc}"/><circle cx="150" cy="150" r="8" fill="${acc}"/><circle cx="286" cy="120" r="8" fill="#fff"/>`;
+      break;
+    case "celebration":
+      fg = crowd(3,210) + fig(140,120,"rgba(255,255,255,.92)")+fig(200,108,"rgba(255,255,255,.98)")+fig(262,124,"rgba(255,255,255,.9)")
+        + `<g>${[60,120,180,240,300,340].map((x,i)=>`<rect x="${x}" y="${28+i*7}" width="8" height="8" transform="rotate(${i*30} ${x} 30)" fill="${[acc,'#fff',acc,'#fff',acc,'#fff'][i]}"/>`).join("")}</g>`;
+      break;
+    case "youth":
+      fg = `<rect x="40" y="150" width="320" height="4" fill="rgba(255,255,255,.3)"/>
+        <g stroke="rgba(255,255,255,.5)" stroke-width="3" fill="none"><rect x="272" y="70" width="80" height="80"/><line x1="272" y1="70" x2="352" y2="150"/></g>
+        ${fig(130,110,"rgba(255,255,255,.95)")}
+        <circle cx="180" cy="150" r="12" fill="#fff"/><path d="M180 140 l6 4 -2 8 h-8 l-2 -8z" fill="${c2}"/>`;
+      break;
+    case "aerial":
+      fg = `<rect x="70" y="26" width="260" height="168" rx="10" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.26)"/>
+        <line x1="70" y1="110" x2="330" y2="110" stroke="rgba(255,255,255,.22)"/><circle cx="200" cy="110" r="30" fill="none" stroke="rgba(255,255,255,.22)"/>
+        <rect x="70" y="76" width="34" height="68" fill="none" stroke="rgba(255,255,255,.22)"/><rect x="296" y="76" width="34" height="68" fill="none" stroke="rgba(255,255,255,.22)"/>
+        <path d="M40 200 L200 110 L360 200" fill="none" stroke="${acc}" stroke-width="2.5" stroke-dasharray="5 6"/>
+        <circle cx="200" cy="110" r="7" fill="${acc}"/>`;
+      break;
+    case "book":
+      fg = `<g stroke="rgba(255,255,255,.85)" stroke-width="3" fill="rgba(255,255,255,.10)">
+          <path d="M200 60 C 150 44, 96 48, 70 62 L70 170 C 96 156, 150 152, 200 168 Z"/>
+          <path d="M200 60 C 250 44, 304 48, 330 62 L330 170 C 304 156, 250 152, 200 168 Z"/>
+          <line x1="200" y1="60" x2="200" y2="168"/></g>
+        <g stroke="rgba(255,255,255,.3)" stroke-width="1.5"><line x1="90" y1="86" x2="180" y2="98"/><line x1="90" y1="104" x2="180" y2="116"/><line x1="220" y1="98" x2="310" y2="86"/><line x1="220" y1="116" x2="310" y2="104"/></g>
+        <circle cx="135" cy="120" r="7" fill="${acc}"/>`;
+      break;
+    case "stadium": default:
+      fg = crowd(9,206) + `<g stroke="rgba(255,255,255,.4)" stroke-width="3"><line x1="60" y1="30" x2="60" y2="120"/><line x1="340" y1="30" x2="340" y2="120"/></g>
+        <rect x="44" y="22" width="34" height="12" rx="3" fill="rgba(246,178,60,.85)"/><rect x="322" y="22" width="34" height="12" rx="3" fill="rgba(246,178,60,.85)"/>
+        <rect x="0" y="196" width="400" height="24" fill="rgba(23,192,106,.18)"/>`;
+  }
+  return `<svg viewBox="0 0 400 220" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${base}${fg}</svg>`;
+}
+const SCENE = {
+  "pacote-torcedor":{t:"crowd",c1:"#0B4DA2",c2:"#071a3a",a:"#E4002B"},
+  "mesa-com-danilo":{t:"studio",c1:"#241542",c2:"#070711",a:"#F6B23C"},
+  "participe-pre-jogo":{t:"tactics",c1:"#0E7A43",c2:"#052015",a:"#F6B23C"},
+  "participe-pos-jogo":{t:"celebration",c1:"#9a0518",c2:"#2a0008",a:"#F6B23C"},
+  "mentoria-varzea":{t:"youth",c1:"#2f6b3a",c2:"#0f2318",a:"#F6B23C"},
+  "mentoria-perspectiva":{t:"aerial",c1:"#123a6b",c2:"#06101f",a:"#17C06A"},
+  "ebook":{t:"book",c1:"#2a3550",c2:"#0c1220",a:"#F6B23C"}
+};
+function prodScene(slug){const s=SCENE[slug]||{t:"stadium",c1:"#0B4DA2",c2:"#071a3a",a:"#E4002B"};return sceneSVG(s.t,s.c1,s.c2,s.a);}
+
 function packCard(p){
   return `<div class="pack ${p.hot?"hot":""}">
     ${p.hot?'<span class="chip green" style="position:absolute;top:-11px;left:22px">★ Mais pedido</span>':""}
@@ -788,7 +870,7 @@ function packCard(p){
 }
 function prodCard(p){
   return `<a class="prod" href="#/p/${p.slug}">
-    <div class="cap thumb ${p.grad}"><span class="chip ${p.cat==='Mentoria'?'red':p.cat==='Material'?'blue':'green'} cat">${esc(p.cat)}</span>${p.emoji}</div>
+    <div class="cap">${prodScene(p.slug)}<span class="chip ${p.cat==='Mentoria'?'red':p.cat==='Material'?'blue':'green'} cat">${esc(p.cat)}</span></div>
     <div class="p-body">
       <h3>${esc(p.nome)}</h3>
       <p class="tl">${esc(p.tagline)}</p>
@@ -821,8 +903,8 @@ function pageHome(){
         </div>
       </div>
       <div class="reveal frame" aria-label="Espaço para a foto do Danilo Dias">
+        <div class="scene-box" style="position:absolute;inset:0;border-radius:0;z-index:0">${sceneSVG("stadium","#0B4DA2","#05101f","#E4002B")}</div>
         <span class="chip red badge">@diasdanilo</span>
-        <div class="silh">👤</div>
         <span class="note">↳ troque por uma foto do Danilo</span>
         <div class="who"><b>Danilo Dias</b><span>APRESENTADOR · EX-ATLETA PROFISSIONAL</span></div>
       </div>
@@ -859,7 +941,7 @@ function pageHome(){
       </div>
       <div class="news-grid reveal">
         <article class="card">
-          <div class="thumb">🏆<span class="chip red" style="position:absolute;top:12px;left:12px">${NEWS_FEAT.tag}</span></div>
+          <div class="thumb scene-box" style="aspect-ratio:16/9;border-radius:0">${sceneSVG("stadium","#0B4DA2","#071a3a","#E4002B")}<span class="chip red" style="position:absolute;top:12px;left:12px;z-index:2">${NEWS_FEAT.tag}</span></div>
           <div class="body"><h3>${esc(NEWS_FEAT.title)}</h3><p style="color:var(--ink-2);font-size:.88rem;margin:8px 0 0">${esc(NEWS_FEAT.sub)}</p><div class="meta"><span>${NEWS_FEAT.meta}</span></div></div>
         </article>
         <div class="card" style="padding:16px 18px">
@@ -867,7 +949,7 @@ function pageHome(){
           <ul class="mais-lidos">${MAIS_LIDOS.map((n,i)=>`<li><span class="rk">${i+1}</span><div><h4>${esc(n.t)}</h4><div class="meta">${n.m}</div></div></li>`).join("")}</ul>
         </div>
         <div style="display:flex;flex-direction:column;gap:20px">
-          ${NEWS_AUTO.slice(0,2).map(n=>`<article class="card"><div class="thumb ${n.g}" style="aspect-ratio:16/7">🏎️</div><div class="body"><h3 style="font-size:.94rem">${esc(n.t)}</h3><div class="meta"><span>Placar da Velocidade</span></div></div></article>`).join("")}
+          ${NEWS_AUTO.slice(0,2).map(n=>`<article class="card"><div class="thumb scene-box" style="aspect-ratio:16/7;border-radius:0">${sceneSVG("aerial","#123a6b","#06101f","#F6B23C")}</div><div class="body"><h3 style="font-size:.94rem">${esc(n.t)}</h3><div class="meta"><span>Placar da Velocidade</span></div></div></article>`).join("")}
         </div>
       </div>
     </div>
@@ -899,11 +981,11 @@ function pageHome(){
       <div class="section-head reveal"><div><span class="live"><span class="dot"></span>PROGRAMA AO VIVO · SEG A SEX · 18H30</span><h2 class="section-title">No <span class="accent">ar</span> com Danilo Dias<div class="hr-red"></div></h2></div><a href="#/comunidade" class="btn btn-ghost">Mais vídeos</a></div>
       <div class="news-grid reveal">
         <article class="card">
-          <div class="thumb g4" style="aspect-ratio:16/9">▶<span class="chip red" style="position:absolute;top:12px;left:12px">Programa</span></div>
+          <div class="thumb scene-box play" style="aspect-ratio:16/9;border-radius:0">${sceneSVG("studio","#241542","#070711","#F6B23C")}<span class="chip red" style="position:absolute;top:12px;left:12px;z-index:2">Programa</span></div>
           <div class="body"><h3>${esc(LIVE_VIDS[0].t)}</h3><div class="meta"><span>${esc(LIVE_VIDS[0].m)}</span></div></div>
         </article>
         <article class="card">
-          <div class="thumb g3" style="aspect-ratio:16/9">▶<span class="chip" style="position:absolute;top:12px;left:12px">YouTube</span></div>
+          <div class="thumb scene-box play" style="aspect-ratio:16/9;border-radius:0">${sceneSVG("celebration","#9a0518","#2a0008","#F6B23C")}<span class="chip" style="position:absolute;top:12px;left:12px;z-index:2">YouTube</span></div>
           <div class="body"><h3>${esc(LIVE_VIDS[1].t)}</h3><div class="meta"><span>${esc(LIVE_VIDS[1].m)}</span></div></div>
         </article>
         <div class="card" style="padding:18px;display:flex;flex-direction:column;justify-content:center;gap:12px">
@@ -929,7 +1011,7 @@ function pageHome(){
         </div>
       </div>
       <div class="frame" style="aspect-ratio:16/12" aria-label="Espaço para foto do Danilo no estúdio">
-        <div class="silh" style="font-size:6rem">🎙️</div>
+        <div class="scene-box" style="position:absolute;inset:0;border-radius:0;z-index:0">${sceneSVG("studio","#241542","#070711","#F6B23C")}</div>
         <span class="note">↳ foto do Danilo no estúdio</span>
         <div class="who"><b>Danilo Dias</b><span>PLACAR ESPORTIVO · AO VIVO 18H30</span></div>
       </div>
@@ -1032,6 +1114,7 @@ function pageProduct(slug){
         <p style="color:var(--ink-2);max-width:52ch">${esc(p.resumo)}</p>
       </div>
       <div class="buybox reveal">
+        <div class="scene-box bb-scene">${prodScene(p.slug)}</div>
         <span class="chip">${esc(p.cat)}</span>
         <div class="price"><span class="cur">${p.cur}</span><span class="val">${p.val}</span><span class="cyc">${p.cyc}</span></div>
         <div class="note">${esc(p.nota)}</div>
@@ -1125,9 +1208,9 @@ function pageComunidade(){
     <div class="wrap">
       <div class="section-head"><div><span class="kicker">Os níveis</span><h2 class="section-title">Da <span class="accent">arquibancada</span> à mesa<div class="hr-red"></div></h2></div></div>
       <div class="lineup reveal">
-        <div class="prod"><div class="cap thumb g4">🎟️<span class="chip green cat">Grátis</span></div><div class="p-body"><h3>Arquibancada</h3><p class="tl">Canal aberto no Telegram, newsletter e o programa ao vivo. O primeiro contato com a torcida.</p><a href="${TG}" target="_blank" rel="noopener" class="btn btn-ghost">Entrar grátis</a></div></div>
-        <div class="prod"><div class="cap thumb g2">📣<span class="chip cat">Torcedor</span></div><div class="p-body"><h3>Grupo VIP</h3><p class="tl">Notícia em primeira mão e resenha no grupo fechado. Incluso no Pacote Torcedor.</p><a href="#/p/pacote-torcedor" class="btn btn-ghost">Ver pacote</a></div></div>
-        <div class="prod"><div class="cap thumb g3">🎙️<span class="chip red cat">Craque</span></div><div class="p-body"><h3>Mesa reduzida</h3><p class="tl">Grupo pequeno com pré e pós-jogo ao vivo e resposta direta do Danilo.</p><a href="#/p/participe-pre-jogo" class="btn btn-ghost">Ver pacote</a></div></div>
+        <div class="prod"><div class="cap">${sceneSVG("crowd","#0B4DA2","#071a3a","#17C06A")}<span class="chip green cat">Grátis</span></div><div class="p-body"><h3>Arquibancada</h3><p class="tl">Canal aberto no Telegram, newsletter e o programa ao vivo. O primeiro contato com a torcida.</p><a href="${TG}" target="_blank" rel="noopener" class="btn btn-ghost">Entrar grátis</a></div></div>
+        <div class="prod"><div class="cap">${sceneSVG("stadium","#0E7A43","#052015","#F6B23C")}<span class="chip cat">Torcedor</span></div><div class="p-body"><h3>Grupo VIP</h3><p class="tl">Notícia em primeira mão e resenha no grupo fechado. Incluso no Pacote Torcedor.</p><a href="#/p/pacote-torcedor" class="btn btn-ghost">Ver pacote</a></div></div>
+        <div class="prod"><div class="cap">${sceneSVG("studio","#241542","#070711","#E4002B")}<span class="chip red cat">Craque</span></div><div class="p-body"><h3>Mesa reduzida</h3><p class="tl">Grupo pequeno com pré e pós-jogo ao vivo e resposta direta do Danilo.</p><a href="#/p/participe-pre-jogo" class="btn btn-ghost">Ver pacote</a></div></div>
       </div>
     </div>
   </section>`;
