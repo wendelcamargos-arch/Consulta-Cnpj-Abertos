@@ -252,6 +252,8 @@ header.top{position:sticky;top:0;z-index:60;background:color-mix(in srgb,var(--b
 .scene-box{position:relative;overflow:hidden;border-radius:12px;background:#0b1020}
 .scene-box svg{position:absolute;inset:0;width:100%;height:100%;display:block}
 .bb-scene{aspect-ratio:16/7;margin-bottom:16px}
+.bb-photo{margin-bottom:16px;border-radius:12px;overflow:hidden;background:linear-gradient(160deg,#141b2b,#0b1020);display:flex;justify-content:center}
+.bb-photo img{max-height:340px;width:auto;max-width:100%;display:block}
 .scene-box.play::after{content:"";position:absolute;z-index:2;top:50%;left:50%;transform:translate(-50%,-50%);width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,.42);border:2px solid rgba(255,255,255,.9)}
 .scene-box.play::before{content:"";position:absolute;z-index:3;top:50%;left:50%;transform:translate(-38%,-50%);border-style:solid;border-width:9px 0 9px 15px;border-color:transparent transparent transparent #fff}
 .prod .p-body{padding:16px 18px 20px;display:flex;flex-direction:column;flex:1}
@@ -892,8 +894,8 @@ const SCENE = {
 };
 function prodScene(slug){const s=SCENE[slug]||{t:"stadium",c1:"#0B4DA2",c2:"#071a3a",a:"#E4002B"};return sceneSVG(s.t,s.c1,s.c2,s.a);}
 /* alguns produtos têm foto real; os demais usam a cena ilustrada */
-const PROD_PHOTO = {"mesa-com-danilo":`<img class="cap-photo" src="${ASSETS.mesa}" alt="Mesa com Danilo Dias" style="object-position:center 8%">`};
-function prodVisual(slug){return PROD_PHOTO[slug] || prodScene(slug);}
+const PROD_PHOTO = {"mesa-com-danilo":ASSETS.mesa};
+function prodVisual(slug){return PROD_PHOTO[slug] ? `<img class="cap-photo" src="${PROD_PHOTO[slug]}" alt="Mesa com Danilo Dias" style="object-position:center 28%">` : prodScene(slug);}
 
 function packCard(p){
   return `<div class="pack ${p.hot?"hot":""}">
@@ -1167,7 +1169,7 @@ function pageProduct(slug){
         <p style="color:var(--ink-2);max-width:52ch">${esc(p.resumo)}</p>
       </div>
       <div class="buybox reveal">
-        <div class="scene-box bb-scene">${prodVisual(p.slug)}</div>
+        ${PROD_PHOTO[p.slug] ? `<div class="bb-photo"><img src="${PROD_PHOTO[p.slug]}" alt="${esc(p.nome)}"></div>` : `<div class="scene-box bb-scene">${prodScene(p.slug)}</div>`}
         <span class="chip">${esc(p.cat)}</span>
         <div class="price"><span class="cur">${p.cur}</span><span class="val">${p.val}</span><span class="cyc">${p.cyc}</span></div>
         <div class="note">${esc(p.nota)}</div>
