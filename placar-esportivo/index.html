@@ -297,6 +297,28 @@ header.top{position:sticky;top:0;z-index:60;background:color-mix(in srgb,var(--b
 .cta-band h2{font-size:clamp(1.6rem,4vw,2.4rem);margin:0 0 8px}
 .cta-band p{opacity:.92;margin:0 0 22px;max-width:52ch;margin-inline:auto}
 
+/* banner anuncie + página de mídia */
+.ad-banner{background:linear-gradient(120deg,#08264f,#0B4DA2);color:#fff;border-radius:18px;padding:36px;display:flex;justify-content:space-between;gap:24px;align-items:center;flex-wrap:wrap;position:relative;overflow:hidden;box-shadow:var(--shadow-lg)}
+.mtabs{display:flex;gap:10px;margin:6px 0 24px;flex-wrap:wrap}
+.mtab{cursor:pointer;border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:12px 22px;font-weight:800;display:inline-flex;gap:9px;align-items:center;color:var(--ink-2);font-size:.95rem}
+.mtab.on{background:var(--red);color:#fff;border-color:var(--red)}
+.mpanel{display:none}
+.mpanel.on{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.mcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);border-top:3px solid var(--red)}
+.mcard.blue{border-top-color:var(--blue)}
+.mcard .lbl{font-family:var(--mono);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.mcard .big{font-family:var(--mono);font-weight:800;font-size:1.9rem;color:var(--ink);margin-top:8px;line-height:1;letter-spacing:-.02em}
+.mcard .sub{font-size:.84rem;color:var(--ink-2);margin-top:6px}
+.mcard .fill{display:inline-block;margin-top:10px;font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:var(--red);background:rgba(228,0,43,.1);border:1px dashed rgba(228,0,43,.4);padding:3px 8px;border-radius:6px}
+.reach{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:8px}
+.reach .r{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-s);padding:16px 18px}
+.reach .r b{font-family:var(--mono);font-size:1.6rem;font-weight:800;color:var(--red);display:block;line-height:1}
+.reach .r span{font-size:.78rem;color:var(--ink-2);margin-top:4px;display:block}
+@media (max-width:860px){.mgrid{grid-template-columns:1fr 1fr}.reach{grid-template-columns:1fr 1fr}}
+@media (max-width:520px){.mgrid{grid-template-columns:1fr}.reach{grid-template-columns:1fr 1fr}}
+
 /* ---------- SOBRE ---------- */
 .about{display:grid;grid-template-columns:.85fr 1.15fr;gap:34px;align-items:center}
 .about .quote{font-size:clamp(1.3rem,2.6vw,1.9rem);font-weight:800;font-style:italic;line-height:1.3;text-wrap:balance}
@@ -534,7 +556,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--line);margin-top:20px}
         <li><a href="#/fale">Deixar uma mensagem</a></li>
         <li><a href="https://wa.me/55SEUNUMERO" target="_blank" rel="noopener">WhatsApp</a></li>
         <li><a href="#/membros">Área de Membros</a></li>
-        <li><a href="#/produtos">Anuncie conosco</a></li>
+        <li><a href="#/anuncie">Anuncie · Passe sua marca</a></li>
       </ul>
       <a href="#/produtos" class="btn btn-green" style="margin-top:14px">Escolher meu pacote</a>
     </div>
@@ -581,6 +603,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--line);margin-top:20px}
   <a href="#/comunidade">Comunidade</a>
   <a href="#/membros">Área de Membros</a>
   <a href="#/fale">Fale com o Danilo</a>
+  <a href="#/anuncie">Anuncie · Passe sua marca</a>
 
   <div class="mgroup">Social Mídia</div>
   <div class="msocial">
@@ -996,6 +1019,21 @@ function pageHome(){
     </div>
   </section>
 
+  <!-- PASSE SUA MARCA (anuncie) -->
+  <section class="section" style="padding-top:0">
+    <div class="wrap">
+      <div class="ad-banner reveal">
+        <div class="scene-box" style="position:absolute;inset:0;border-radius:0;z-index:0;opacity:.5">${sceneSVG("stadium","#08264f","#04101f","#F6B23C")}</div>
+        <div style="position:relative;z-index:1">
+          <span class="kicker" style="color:#bcd4ff">Para marcas e anunciantes</span>
+          <h2 class="broadcast" style="font-size:clamp(1.7rem,4.4vw,2.7rem);margin:8px 0 10px">Passe a sua marca<br>na <span style="color:var(--amber)">TV</span> e no <span style="color:var(--amber)">rádio</span></h2>
+          <p style="opacity:.92;max-width:48ch;margin:0">O sucesso da sua marca começa aqui. Anuncie no Placar Esportivo e fale direto com o torcedor apaixonado por futebol.</p>
+        </div>
+        <a href="#/anuncie" class="btn btn-lg" style="position:relative;z-index:1;background:#fff;color:var(--blue)">Anunciar minha marca →</a>
+      </div>
+    </div>
+  </section>
+
   <!-- SOBRE -->
   <section class="section" style="background:var(--bg-2);border-top:1px solid var(--line)">
     <div class="wrap about reveal">
@@ -1323,6 +1361,77 @@ function pageFale(){
   </section>`;
 }
 
+function pageAnuncie(){
+  return `
+  <section class="p-hero">
+    <div class="flood"></div>
+    <div class="wrap"><div class="crumbs"><a href="#/">Início</a> / Anuncie</div></div>
+    <div class="wrap" style="padding:36px 0 30px;position:relative">
+      <span class="chip blue">Para marcas e anunciantes</span>
+      <h1 class="broadcast" style="font-size:clamp(2.2rem,5vw,3.6rem);margin:12px 0 0">O sucesso da sua marca <span style="color:var(--red)">começa aqui</span></h1>
+      <p style="color:var(--ink-2);max-width:60ch;margin:16px 0 0">Passe a sua marca na TV e no rádio com o Placar Esportivo. Escolha onde quer anunciar e fale com um público que vive futebol todos os dias.</p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:26px">
+    <div class="wrap">
+      <div class="reach reveal">
+        <div class="r"><b>+10 mil</b><span>seguidores nas redes</span></div>
+        <div class="r"><b>18h30</b><span>ao vivo, seg a sex</span></div>
+        <div class="r"><b>Goiás</b><span>praça principal + Brasil</span></div>
+        <div class="r"><b>Diário</b><span>presença na rotina do torcedor</span></div>
+      </div>
+      <p class="mono" style="font-size:.7rem;color:var(--ink-3);margin:6px 0 22px">↳ os números com “a preencher” abaixo são os campos da sua mídia kit — troque pelos dados reais de audiência, canais e retenção.</p>
+
+      <h2 class="section-title" style="font-size:1.5rem">Onde você quer anunciar?<div class="hr-red"></div></h2>
+      <div class="mtabs">
+        <button class="mtab on" id="tab-tv" onclick="PE_midia('tv')">📺 Na TV</button>
+        <button class="mtab" id="tab-radio" onclick="PE_midia('radio')">📻 No rádio</button>
+      </div>
+
+      <!-- PAINEL TV -->
+      <div class="mpanel on" id="panel-tv">
+        <div class="mgrid">
+          <div class="mcard blue"><div class="lbl">Canal na NET / Claro</div><div class="big">Canal 00</div><div class="sub">operadora de TV a cabo</div><span class="fill">preencher com o canal real</span></div>
+          <div class="mcard blue"><div class="lbl">Canal na Sky</div><div class="big">Canal 00</div><div class="sub">operadora via satélite</div><span class="fill">preencher com o canal real</span></div>
+          <div class="mcard blue"><div class="lbl">TV aberta</div><div class="big">Canal 00</div><div class="sub">sinal aberto / digital</div><span class="fill">preencher com o canal real</span></div>
+          <div class="mcard"><div class="lbl">Telespectadores / mês</div><div class="big">00 mil</div><div class="sub">audiência média mensal</div><span class="fill">preencher com o dado real</span></div>
+          <div class="mcard"><div class="lbl">Retenção da base</div><div class="big">00%</div><div class="sub">público fiel que acompanha no mês</div><span class="fill">preencher com o dado real</span></div>
+          <div class="mcard"><div class="lbl">Praça / público</div><div class="big">Goiás</div><div class="sub">torcedor de futebol, faixa a definir</div><span class="fill">detalhar perfil do público</span></div>
+        </div>
+        <div class="cta-band reveal" style="margin-top:22px">
+          <span class="kicker" style="color:#ffd9df">Anuncie na TV</span>
+          <h2 class="broadcast">Sua marca no ar, todo dia</h2>
+          <p>Fale com a equipe e monte o pacote de TV ideal pra sua marca.</p>
+          <a href="${WA}?text=Quero%20anunciar%20minha%20marca%20na%20TV%20do%20Placar%20Esportivo" target="_blank" rel="noopener" class="btn btn-lg" style="background:#fff;color:var(--red)">Quero anunciar na TV</a>
+        </div>
+      </div>
+
+      <!-- PAINEL RÁDIO -->
+      <div class="mpanel" id="panel-radio">
+        <div class="mgrid">
+          <div class="mcard"><div class="lbl">Emissora 1</div><div class="big">Rádio —</div><div class="sub">nome da rádio / FM</div><span class="fill">preencher com a rádio real</span></div>
+          <div class="mcard"><div class="lbl">Emissora 2</div><div class="big">Rádio —</div><div class="sub">nome da rádio / FM</div><span class="fill">preencher com a rádio real</span></div>
+          <div class="mcard"><div class="lbl">Frequências / faixa</div><div class="big">00,0 FM</div><div class="sub">onde o programa passa</div><span class="fill">preencher com a frequência</span></div>
+          <div class="mcard"><div class="lbl">Ouvintes / mês</div><div class="big">00 mil</div><div class="sub">alcance médio mensal</div><span class="fill">preencher com o dado real</span></div>
+          <div class="mcard"><div class="lbl">Horário no rádio</div><div class="big">00h</div><div class="sub">faixa de transmissão</div><span class="fill">preencher com o horário</span></div>
+          <div class="mcard"><div class="lbl">Praça / público</div><div class="big">Goiás</div><div class="sub">ouvinte esportivo, perfil a definir</div><span class="fill">detalhar perfil do público</span></div>
+        </div>
+        <div class="cta-band reveal" style="margin-top:22px;background:linear-gradient(120deg,#0a2f66,#0B4DA2)">
+          <span class="kicker" style="color:#bcd4ff">Anuncie no rádio</span>
+          <h2 class="broadcast">Sua marca na voz do Danilo</h2>
+          <p>Monte o pacote de rádio e alcance o ouvinte apaixonado por futebol.</p>
+          <a href="${WA}?text=Quero%20anunciar%20minha%20marca%20no%20r%C3%A1dio%20do%20Placar%20Esportivo" target="_blank" rel="noopener" class="btn btn-lg" style="background:#fff;color:var(--blue)">Quero anunciar no rádio</a>
+        </div>
+      </div>
+
+      <div style="margin-top:28px;text-align:center">
+        <a href="#/fale" class="btn btn-ghost">Prefere conversar? Fale com o Danilo</a>
+      </div>
+    </div>
+  </section>`;
+}
+
 function pageNotFound(){
   return `<section class="section"><div class="wrap" style="text-align:center;padding:80px 0">
     <h1 class="broadcast" style="font-size:4rem;color:var(--red)">404</h1>
@@ -1342,6 +1451,7 @@ function render(){
   else if(parts[0]==="comunidade"){html=pageComunidade();route="/comunidade";}
   else if(parts[0]==="membros"){html=pageMembros();route="/membros";}
   else if(parts[0]==="fale"){html=pageFale();route="/fale";}
+  else if(parts[0]==="anuncie"){html=pageAnuncie();route="/anuncie";}
   else if(parts[0]==="p" && parts[1]){html=pageProduct(parts[1]);route="/produtos";}
   else {html=pageNotFound();}
   view.innerHTML = html;
@@ -1428,6 +1538,14 @@ $("#hamb").addEventListener("click",()=>mmenu.classList.add("show"));
 $("#mclose").addEventListener("click",closeMenus);
 $("#m-login").addEventListener("click",()=>{closeMenus();openModal();});
 mmenu.querySelectorAll("a").forEach(a=>a.addEventListener("click",closeMenus));
+
+// Anuncie — alterna entre TV e Rádio
+window.PE_midia = function(tab){
+  document.getElementById("panel-tv").classList.toggle("on", tab==="tv");
+  document.getElementById("panel-radio").classList.toggle("on", tab==="radio");
+  document.getElementById("tab-tv").classList.toggle("on", tab==="tv");
+  document.getElementById("tab-radio").classList.toggle("on", tab==="radio");
+};
 
 // "Fale com o Danilo" — confirma o envio (na publicação, ligar a um serviço de formulário/e-mail)
 window.PE_fale = function(e){
