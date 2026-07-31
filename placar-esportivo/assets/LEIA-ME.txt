@@ -1,0 +1,9 @@
+COLOQUE AQUI AS IMAGENS OFICIAIS DO PLACAR ESPORTIVO
+=====================================================
+Use exatamente estes nomes de arquivo (pode ser .png ou .jpg):
+
+  logo.png          -> o escudo oficial "PLACAR ESPORTIVO" (fundo transparente)
+  danilo-estudio.png-> foto do Danilo no estudio (jaqueta verde)
+  banner-marca.png  -> banner "O sucesso da sua marca comeca aqui"
+
+Depois de subir os arquivos, avise o Wendel/Claude que eu embuto no site.
