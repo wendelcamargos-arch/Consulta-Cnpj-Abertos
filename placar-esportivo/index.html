@@ -895,7 +895,7 @@ const SCENE = {
 function prodScene(slug){const s=SCENE[slug]||{t:"stadium",c1:"#0B4DA2",c2:"#071a3a",a:"#E4002B"};return sceneSVG(s.t,s.c1,s.c2,s.a);}
 /* alguns produtos têm foto real; os demais usam a cena ilustrada */
 const PROD_PHOTO = {"mesa-com-danilo":ASSETS.mesa};
-function prodVisual(slug){return PROD_PHOTO[slug] ? `<img class="cap-photo" src="${PROD_PHOTO[slug]}" alt="Mesa com Danilo Dias" style="object-position:center 28%">` : prodScene(slug);}
+function prodVisual(slug){return PROD_PHOTO[slug] ? `<img class="cap-photo" src="${PROD_PHOTO[slug]}" alt="Mesa com Danilo Dias" style="object-position:center 12%">` : prodScene(slug);}
 
 function packCard(p){
   return `<div class="pack ${p.hot?"hot":""}">
