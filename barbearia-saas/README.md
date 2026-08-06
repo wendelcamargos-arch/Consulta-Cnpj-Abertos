@@ -1,76 +1,59 @@
-# 💈 Sistema White Label SaaS para Barbearia
+# 💈 Barbearia OS — White Label SaaS para Barbearias
 
-Aplicação web multi-tenant para gestão de barbearias, construída a partir da pesquisa
-de mercado do setor: agendamentos confusos, alto no-show, cadastro incompleto,
-ausência de recorrência e gestão fraca de caixa/estoque/DRE.
+Sistema operacional de **recorrência e redução de faltas** para barbearias:
+agenda recorrente, confirmações pelo WhatsApp oficial (Meta Cloud API), gestão
+de cadeiras e visão financeira (caixa por sessão, estoque com custo médio, DRE).
 
-## Módulos (MVP prioritário do infográfico ✔)
+Multi-tenant white label: cada barbearia com marca própria; painel administrativo
+da plataforma para operar os tenants.
 
-| Módulo | O que faz |
-|---|---|
-| **Agenda Inteligente** | Agendamento por barbeiro, serviço e horário; detecção de conflito; fluxo agendado → confirmado → atendido → pago |
-| **WhatsApp Automação** | Confirmação 30 min antes, lembrete na véspera, campanha de aniversário; fila auditável; integração WhatsApp Cloud API (ou modo simulado + link wa.me) |
-| **CRM do Cliente** | Nome, CPF (validado), telefone, aniversário, histórico de visitas |
-| **Recorrência** | Reservas semanais, quinzenais, mensais e anuais; geração automática dos próximos horários |
-| **Financeiro (Caixa)** | Entradas/saídas por categoria; lançamentos automáticos no fechamento do atendimento |
-| **Estoque** | Produtos com custo/venda, movimentos, alerta de estoque mínimo, venda no fechamento |
-| **Gestão de Cadeiras** | Barbeiro por comissão (% configurável) ou aluguel de cadeira (valor fixo mensal lançado no caixa) |
-| **Combos** | Pacotes de serviços com preço fechado e duração somada |
-| **Relatórios** | DRE gerencial mensal, desempenho por barbeiro, KPIs (no-show, ticket médio, taxa de confirmação) |
-| **White Label** | Cada barbearia com nome, cor e logo próprios; painel administrativo da plataforma (tenants, MRR, suspensão) |
+## Estado
 
-## Arquitetura
+MVP tecnicamente apto a **piloto controlado** — não é lançamento público.
+Pesquisa de mercado, posicionamento e plano de validação: `docs/MARKET_RESEARCH.md`,
+`docs/COMPETITIVE_MATRIX.md`, `docs/PRODUCT_POSITIONING.md`.
 
-- **Backend:** FastAPI modular — um router por domínio (`app/routers/`), isolamento
-  multi-tenant por `tenant_id` em toda tabela de negócio, autenticação por token
-  HMAC com papéis (`superadmin` / `gerente` / `recepcao`).
-- **Banco:** SQLite (WAL) — zero configuração para rodar; a camada `app/db.py`
-  centraliza o acesso e a migração para Postgres é direta (mesmo SQL parametrizado).
-- **Frontend:** SPA vanilla JS servida pelo próprio backend (`static/`), tema
-  preto/dourado com cor primária personalizável por tenant.
+## Stack
 
-## Rodar
+FastAPI · **PostgreSQL 16** (Alembic; SQLite apenas em teste unitário) ·
+SPA vanilla JS · Docker Compose. Arquitetura: `docs/ARCHITECTURE.md`.
+
+## Rodar (desenvolvimento)
 
 ```bash
-pip install fastapi "uvicorn[standard]"
-python -m app.seed                      # dados de demonstração
-uvicorn app.main:app --reload           # http://localhost:8000
+pip install -r requirements.txt
+export DATABASE_URL=postgresql://barbearia:senha@localhost:5432/barbearia_dev
+python -m alembic upgrade head
+DEMO_MODE=1 python -m app.seed          # dados demo (proibido em produção)
+uvicorn app.main:app --reload           # site em /, painel em /app
 ```
 
-Logins de demonstração:
-
-| Papel | Login | Senha |
-|---|---|---|
-| Plataforma (admin) | admin@plataforma.com | admin123 |
-| Gerente Barbearia Prime | gerente@prime.com | gerente123 |
-| Recepção Barbearia Prime | recepcao@prime.com | recepcao123 |
-
-## WhatsApp em produção
-
-Defina as variáveis e a fila passa a disparar de verdade pela Cloud API da Meta:
-
-```bash
-export META_WA_TOKEN="..."       # token permanente do app Meta
-export META_WA_PHONE_ID="..."    # phone number ID
-```
-
-Agende `POST /api/whatsapp/processar` num cron (a cada minuto). Sem credenciais,
-o sistema simula o envio e oferece o link `wa.me` para disparo manual pela recepção.
-
-> ⚠️ Templates de mensagem ativa (fora da janela de 24h) precisam ser aprovados
-> pela Meta antes do uso em produção.
-
-## Segurança e LGPD
-
-- Senhas com hash salgado; tokens expiram em 12h.
-- CPF validado por dígito verificador e armazenado apenas com finalidade de cadastro.
-- Dados isolados por tenant em todas as queries.
-- Em produção: defina `BARBEARIA_SECRET`, use HTTPS e faça backup do banco
-  (`BARBEARIA_DB` aponta o caminho do arquivo).
+Ou com Docker: `cp .env.example .env` e `docker compose up -d --build`
+(`docs/DEPLOYMENT.md`).
 
 ## Testes
 
 ```bash
-pip install pytest httpx
-pytest tests/ -v
+python -m pytest tests/ -q                                          # SQLite (unitário)
+DATABASE_URL=postgresql://barbearia:senha@localhost:5432/barbearia_test \
+  python -m pytest tests/ -q --cov=app                              # suíte oficial
 ```
+
+Cobrem: autenticação (rate limit, RBAC, recuperação de senha, seed bloqueado),
+isolamento multi-tenant (leitura/escrita/exclusão cruzada, suspensão), agenda
+(conflitos, concorrência no banco, bloqueios, dia fechado), recorrência (4
+frequências, políticas pular/sugerir/pendência, 29/02), WhatsApp (fila, retry,
+dead-letter, webhook com assinatura e idempotência, respostas), aniversário
+(consentimento, voucher único/intransferível/validade), financeiro (pagamento
+dividido/parcial, estorno, comissão, aluguel com contrato, sessão de caixa com
+divergência, DRE) e estoque (custo médio, perda, mínimo).
+
+## Documentação
+
+| Tema | Arquivo |
+|---|---|
+| Arquitetura / Banco / Multi-tenancy | `docs/ARCHITECTURE.md` · `docs/DATABASE.md` · `docs/MULTI_TENANCY.md` |
+| Segurança / LGPD | `docs/SECURITY.md` · `docs/LGPD.md` |
+| WhatsApp (setup, templates, webhook) | `docs/WHATSAPP_META_SETUP.md` · `docs/WHATSAPP_TEMPLATE_CATALOG.md` · `docs/WHATSAPP_WEBHOOK_FLOW.md` |
+| Operação | `docs/DEPLOYMENT.md` · `docs/BACKUP_AND_RESTORE.md` · `docs/PILOT_RUNBOOK.md` |
+| Mercado | `docs/MARKET_RESEARCH.md` · `docs/COMPETITIVE_MATRIX.md` · `docs/PRODUCT_POSITIONING.md` |

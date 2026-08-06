@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Sistema operacional de recorrência e redução de faltas para barbearias: agenda recorrente, WhatsApp oficial, gestão de cadeiras e visão financeira.">
+<title>Barbearia OS — recorrência e fim da cadeira vazia</title>
+<style>
+:root{--ouro:#C9A227;--ouro-claro:#E8C766;--preto:#0D0D0F;--carvao:#17171B;--borda:#2E2E36;
+--texto:#EDEAE0;--suave:#9B9788}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif}
+body{background:var(--preto);color:var(--texto);line-height:1.6}
+a{color:var(--ouro-claro)}
+.container{max-width:1080px;margin:0 auto;padding:0 24px}
+header{position:sticky;top:0;background:rgba(13,13,15,.95);border-bottom:1px solid var(--borda);z-index:10}
+header .container{display:flex;justify-content:space-between;align-items:center;height:64px}
+.logo{font-weight:800;color:var(--ouro-claro);font-size:18px}
+nav a{margin-left:18px;font-size:14px;text-decoration:none;color:var(--suave)}
+nav a:hover{color:var(--texto)}
+.btn{display:inline-block;background:linear-gradient(135deg,var(--ouro),#A8871F);color:#141414;
+padding:12px 26px;border-radius:8px;font-weight:700;text-decoration:none;border:none;font-size:15px;cursor:pointer}
+.btn-ghost{display:inline-block;border:1px solid var(--borda);color:var(--texto);padding:12px 26px;
+border-radius:8px;text-decoration:none;font-size:15px}
+section{padding:72px 0;border-bottom:1px solid #151519}
+h1{font-size:40px;line-height:1.2}
+h2{font-size:28px;color:var(--ouro-claro);margin-bottom:18px}
+h3{font-size:17px;margin-bottom:8px}
+p.sub{color:var(--suave);font-size:18px;margin:18px 0 28px;max-width:640px}
+.hero{padding:96px 0;text-align:center;background:radial-gradient(ellipse at top,#1D1A12 0%,var(--preto) 65%)}
+.hero p.sub{margin-left:auto;margin-right:auto}
+.grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;margin-top:28px}
+.cartao{background:var(--carvao);border:1px solid var(--borda);border-radius:12px;padding:22px}
+.cartao p{color:var(--suave);font-size:14px}
+.selo{display:inline-block;background:#4A3A1E;color:var(--ouro-claro);border-radius:20px;
+padding:4px 12px;font-size:12px;font-weight:700;margin-bottom:14px}
+.faq details{background:var(--carvao);border:1px solid var(--borda);border-radius:10px;
+padding:16px 20px;margin-bottom:10px}
+.faq summary{cursor:pointer;font-weight:600}
+.faq p{color:var(--suave);font-size:14px;margin-top:10px}
+form.demo{display:grid;gap:12px;max-width:440px}
+form.demo input,form.demo textarea{background:var(--carvao);border:1px solid var(--borda);
+color:var(--texto);padding:12px;border-radius:8px;font:inherit}
+footer{padding:40px 0;color:var(--suave);font-size:13px}
+footer .container{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between}
+@media(max-width:640px){h1{font-size:30px}nav{display:none}}
+</style>
+</head>
+<body>
+
+<header><div class="container">
+  <span class="logo">💈 Barbearia OS</span>
+  <nav>
+    <a href="#dor">A dor</a><a href="#modulos">Módulos</a><a href="#planos">Planos</a>
+    <a href="#faq">FAQ</a><a href="#demo">Demonstração</a><a href="/app">Entrar</a>
+  </nav>
+</div></header>
+
+<!-- 1. Hero -->
+<div class="hero"><div class="container">
+  <h1>Cadeira vazia não paga boleto.<br>Recorrência paga.</h1>
+  <p class="sub">Sistema operacional de recorrência e redução de faltas para barbearias:
+  agenda recorrente, confirmação pelo WhatsApp oficial, gestão de cadeiras e visão financeira de verdade.</p>
+  <a class="btn" href="#demo">Quero uma demonstração</a>
+  <a class="btn-ghost" href="/app">Já sou cliente</a>
+</div></div>
+
+<!-- 2. Dor -->
+<section id="dor"><div class="container">
+  <h2>A dor da cadeira vazia</h2>
+  <p class="sub">Sem confirmação automatizada, parte relevante da agenda simplesmente não aparece —
+  e cada falta é receita que não volta. Agendamento confuso, cliente semanal sem horário fixo e
+  caixa no caderno completam o prejuízo.</p>
+  <div class="grade">
+    <div class="cartao"><h3>No-show sem aviso</h3><p>Horário perdido é custo fixo pago sem receita. Confirmar na mão consome a recepção o dia inteiro.</p></div>
+    <div class="cartao"><h3>Cliente fiel sem cadência</h3><p>O cliente de toda semana vira cliente de "quando lembra" — e alguma hora vira cliente de outra barbearia.</p></div>
+    <div class="cartao"><h3>Financeiro no escuro</h3><p>Sem caixa por sessão, comissão calculada e DRE, o dono descobre o mês ruim só quando o boleto chega.</p></div>
+  </div>
+</div></section>
+
+<!-- 3-8. Benefícios e módulos -->
+<section id="modulos"><div class="container">
+  <h2>O que o sistema faz</h2>
+  <div class="grade">
+    <div class="cartao"><h3>📅 Agenda e recorrência</h3><p>Reserva por barbeiro, serviço e horário, com detecção de conflito. Recorrência semanal, quinzenal, mensal e anual que gera os próximos horários sozinha — sem sobrepor reservas.</p></div>
+    <div class="cartao"><h3>✅ WhatsApp oficial (Meta)</h3><p>Confirmação, lembrete e aviso final em horários configuráveis, pela API oficial do WhatsApp Business — com registro de resposta: confirmar, cancelar ou "vou atrasar".</p></div>
+    <div class="cartao"><h3>💺 Gestão de cadeiras</h3><p>Barbeiro por comissão ou aluguel de cadeira, com contrato, cobrança mensal e visão de resultado por profissional.</p></div>
+    <div class="cartao"><h3>💰 Caixa, estoque e DRE</h3><p>Sessões de caixa com abertura, sangria e fechamento com divergência; estoque com custo médio; DRE gerencial mensal por categoria.</p></div>
+    <div class="cartao"><h3>🎂 Aniversário com voucher</h3><p>Campanha automática com voucher único, intransferível e com validade — só para clientes que consentiram receber marketing.</p></div>
+    <div class="cartao"><h3>🏷 White label</h3><p>Sua marca, sua cor, seu logo. Painel administrativo da plataforma para operar múltiplas barbearias.</p></div>
+  </div>
+</div></section>
+
+<!-- 9. Planos -->
+<section id="planos"><div class="container">
+  <h2>Planos</h2>
+  <span class="selo">EM VALIDAÇÃO COM AS PRIMEIRAS BARBEARIAS</span>
+  <p class="sub">Estamos validando o preço com um grupo fundador de 5 barbearias. Quem entra agora
+  participa da definição do produto e trava condição de fundador. Peça uma demonstração e receba a proposta.</p>
+</div></section>
+
+<!-- 10. Demonstração -->
+<section id="demo"><div class="container">
+  <h2>Solicitar demonstração</h2>
+  <p class="sub">Deixe seus dados e retornamos pelo WhatsApp para agendar uma demonstração guiada.</p>
+  <form class="demo" onsubmit="event.preventDefault();this.innerHTML='<p>Recebido! Entraremos em contato. ✅</p>'">
+    <input required placeholder="Nome da barbearia">
+    <input required placeholder="Seu nome">
+    <input required type="tel" placeholder="WhatsApp (DDD + número)">
+    <textarea rows="3" placeholder="Quantos barbeiros? Qual sua maior dor hoje?"></textarea>
+    <button class="btn" type="submit">Enviar</button>
+  </form>
+</div></section>
+
+<!-- 11. FAQ -->
+<section id="faq"><div class="container">
+  <h2>Perguntas frequentes</h2>
+  <div class="faq">
+    <details><summary>O WhatsApp é oficial?</summary><p>Sim. A automação usa a API oficial do WhatsApp Business (Meta Cloud API), com templates aprovados pela Meta. Não usamos automação de WhatsApp Web nem QR Code, que arriscam o banimento do seu número.</p></details>
+    <details><summary>Preciso instalar alguma coisa?</summary><p>Não. O sistema roda na nuvem e funciona no navegador do computador ou do celular da recepção.</p></details>
+    <details><summary>Funciona para barbeiro que aluga cadeira?</summary><p>Sim — cada barbeiro pode ser configurado como comissão (percentual) ou aluguel de cadeira (valor fixo mensal com contrato), e o financeiro trata cada modelo do jeito certo.</p></details>
+    <details><summary>E a LGPD?</summary><p>Dados isolados por barbearia, consentimento de marketing registrado por cliente, CPF validado e guardado só para cadastro/antifraude, e auditoria de ações críticas. Detalhes na nossa <a href="/privacidade">Política de Privacidade</a>.</p></details>
+    <details><summary>Consigo migrar da minha planilha ou de outro sistema?</summary><p>Sim, o onboarding guiado cadastra barbeiros, serviços, preços e clientes. Importação assistida faz parte da implantação do grupo fundador.</p></details>
+  </div>
+</div></section>
+
+<!-- 12-14. Rodapé: políticas e contato -->
+<footer><div class="container">
+  <span>© 2026 Barbearia OS — Gestão · Estilo · Resultado</span>
+  <span>
+    <a href="/privacidade">Política de Privacidade</a> ·
+    <a href="/termos">Termos de Uso</a> ·
+    <a href="mailto:contato@barbeariaos.com.br">contato@barbeariaos.com.br</a>
+  </span>
+</div></footer>
+
+</body>
+</html>

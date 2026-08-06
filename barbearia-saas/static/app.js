@@ -141,6 +141,8 @@ async clientes(el) {
         <div><label>Telefone (DDD+número)*</label><input id="cl-telefone" placeholder="34999990000"></div>
         <div><label>CPF</label><input id="cl-cpf" placeholder="000.000.000-00"></div>
         <div><label>Aniversário (DD/MM)</label><input id="cl-aniv" placeholder="15/08"></div>
+        <div><label>Aceita marketing (aniversário)?</label><select id="cl-mkt">
+          <option value="1">Sim, consentiu</option><option value="0">Não</option></select></div>
         <div><button class="btn" onclick="criarCliente()">Cadastrar</button></div>
       </div>
     </div>
@@ -211,11 +213,22 @@ async whatsapp(el) {
 
 async caixa(el) {
   const dados = await api('/api/caixa');
+  const s = dados.sessao_aberta;
   el.innerHTML = `
     <div class="grade-kpi">
       <div class="kpi"><div class="rotulo">Entradas (mês)</div><div class="valor positivo">${fmt(dados.entradas)}</div></div>
       <div class="kpi"><div class="rotulo">Saídas (mês)</div><div class="valor negativo">${fmt(dados.saidas)}</div></div>
       <div class="kpi"><div class="rotulo">Saldo</div><div class="valor">${fmt(dados.saldo)}</div></div>
+      <div class="kpi"><div class="rotulo">Sessão de caixa</div><div class="valor">${s ? 'ABERTA' : 'fechada'}</div></div>
+    </div>
+    <div class="painel"><h3>Sessão de caixa</h3>
+      ${s ? `<p style="font-size:13px;color:var(--texto-suave)">Aberta em ${fmtDataHora(s.aberto_em)} com ${fmt(s.valor_inicial)} de fundo.</p>
+        <div class="linha-form" style="margin-top:10px">
+          <div><button class="btn-mini" onclick="movSessao('reforco')">+ Reforço</button>
+               <button class="btn-mini" onclick="movSessao('sangria')">− Sangria</button></div>
+          <div><button class="btn" onclick="fecharSessao()">Fechar caixa (conferência)</button></div>
+        </div>`
+        : `<div class="linha-form"><div><button class="btn" onclick="abrirSessao()">Abrir caixa</button></div></div>`}
     </div>
     <div class="painel"><h3>Novo lançamento</h3>
       <div class="linha-form">
@@ -439,10 +452,11 @@ async function mudarStatus(id, status) {
 async function fecharConta(id) {
   const forma = prompt('Forma de pagamento (dinheiro/pix/debito/credito):', 'pix');
   if (!forma) return;
+  const voucher = prompt('Voucher de aniversário (deixe vazio se não houver):', '') || '';
   try {
     const r = await api(`/api/agendamentos/${id}/fechar`, {method: 'POST',
-      body: JSON.stringify({forma_pagamento: forma})});
-    avisar(`Fechado: ${fmt(r.total_recebido)} recebido · comissão ${fmt(r.comissao_barbeiro)} lançada no caixa.`);
+      body: JSON.stringify({pagamentos: [{forma}], voucher_codigo: voucher})});
+    avisar(`Fechado (${r.status}): ${fmt(r.recebido)} recebido · desconto ${fmt(r.desconto)} · comissão ${fmt(r.comissao_barbeiro)}.`);
     document.getElementById('filtro-data') ? recarregarAgenda() : abrir('dashboard');
   } catch (e) { avisar(e.message, 'erro'); }
 }
@@ -453,7 +467,8 @@ async function criarCliente() {
       nome: document.getElementById('cl-nome').value,
       telefone: document.getElementById('cl-telefone').value,
       cpf: document.getElementById('cl-cpf').value,
-      aniversario: document.getElementById('cl-aniv').value})});
+      aniversario: document.getElementById('cl-aniv').value,
+      consentimento_marketing: document.getElementById('cl-mkt').value === '1'})});
     avisar('Cliente cadastrado.'); abrir('clientes');
   } catch (e) { avisar(e.message, 'erro'); }
 }
@@ -505,8 +520,9 @@ async function processarFila() {
 
 async function campanhaAniversario() {
   try {
-    const r = await api('/api/whatsapp/campanha-aniversario?mes=' + document.getElementById('wa-mes').value, {method: 'POST'});
-    avisar(`${r.mensagens_criadas} mensagens criadas para ${r.aniversariantes} aniversariantes.`); abrir('whatsapp');
+    const r = await api('/api/aniversario/gerar?mes=' + document.getElementById('wa-mes').value, {method: 'POST'});
+    avisar(`${r.vouchers_emitidos} vouchers emitidos (${r.sem_consentimento} sem consentimento, ${r.ja_emitidos} já emitidos).`);
+    abrir('whatsapp');
   } catch (e) { avisar(e.message, 'erro'); }
 }
 
@@ -525,6 +541,32 @@ async function lancarCaixa() {
       descricao: document.getElementById('cx-desc').value,
       valor: +document.getElementById('cx-valor').value})});
     avisar('Lançamento registrado.'); abrir('caixa');
+  } catch (e) { avisar(e.message, 'erro'); }
+}
+
+async function abrirSessao() {
+  const v = prompt('Fundo de troco inicial (R$):', '0');
+  if (v === null) return;
+  try { await api('/api/caixa/sessao/abrir', {method: 'POST', body: JSON.stringify({valor_inicial: +v || 0})});
+    avisar('Caixa aberto.'); abrir('caixa');
+  } catch (e) { avisar(e.message, 'erro'); }
+}
+
+async function movSessao(tipo) {
+  const v = prompt(`Valor do ${tipo} (R$):`, '');
+  if (!v) return;
+  try { await api(`/api/caixa/sessao/${tipo}`, {method: 'POST', body: JSON.stringify({valor: +v})});
+    avisar(`${tipo} registrado.`); abrir('caixa');
+  } catch (e) { avisar(e.message, 'erro'); }
+}
+
+async function fecharSessao() {
+  const v = prompt('Valor CONTADO em dinheiro na gaveta (R$):', '');
+  if (v === null) return;
+  try {
+    const r = await api('/api/caixa/sessao/fechar', {method: 'POST', body: JSON.stringify({valor_contado: +v || 0})});
+    avisar(`Caixa fechado. Esperado ${fmt(r.valor_esperado_dinheiro)} · contado ${fmt(r.valor_contado)} · divergência ${fmt(r.divergencia)}.`);
+    abrir('caixa');
   } catch (e) { avisar(e.message, 'erro'); }
 }
 

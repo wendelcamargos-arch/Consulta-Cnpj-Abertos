@@ -1,22 +1,38 @@
-"""Fila de mensagens WhatsApp: processamento, respostas e campanha de aniversário."""
-from datetime import datetime
+"""WhatsApp: fila, processamento, webhook oficial da Meta e respostas.
 
-from fastapi import APIRouter, Depends, HTTPException
+Webhook (Meta Cloud API):
+  GET  /api/whatsapp/webhook  → verificação (hub.challenge)
+  POST /api/whatsapp/webhook  → mensagens e status, com validação de assinatura
+                                (X-Hub-Signature-256 + META_APP_SECRET) e
+                                idempotência por evento (whatsapp_events.evento_id).
+"""
+import hashlib
+import hmac
+import json
+import os
+import unicodedata
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
+from ..audit import auditar
 from ..auth import contexto_tenant
 from ..db import get_db, row, rows
-from ..whatsapp_service import enviar_via_provedor, link_wame, template_aniversario
+from ..util import agora_tenant
+from ..whatsapp_service import link_wame, processar_fila
 
 router = APIRouter(prefix="/api/whatsapp", tags=["whatsapp"])
 
 
 @router.get("/fila")
-def fila(status: str = "", usuario: dict = Depends(contexto_tenant)):
+def fila(status: str = "", pendencia: int = 0, usuario: dict = Depends(contexto_tenant)):
     condicoes, params = ["m.tenant_id=?"], [usuario["tenant_id"]]
     if status:
         condicoes.append("m.status=?")
         params.append(status)
+    if pendencia:
+        condicoes.append("m.pendente_recepcao=1")
     with get_db() as db:
         lista = rows(db.execute(
             f"""SELECT m.*, c.nome cliente FROM mensagens_whatsapp m
@@ -29,31 +45,52 @@ def fila(status: str = "", usuario: dict = Depends(contexto_tenant)):
 
 @router.post("/processar")
 def processar(usuario: dict = Depends(contexto_tenant)):
-    """Dispara todas as mensagens pendentes cujo horário já chegou.
-    Em produção, chame este endpoint por um cron (ex.: a cada minuto)."""
-    agora = datetime.now().strftime("%Y-%m-%dT%H:%M")
-    enviadas, erros = 0, 0
+    """Dispara pendentes/retries vencidos. Em produção: cron a cada minuto."""
     with get_db() as db:
-        pendentes = rows(db.execute(
-            "SELECT * FROM mensagens_whatsapp WHERE tenant_id=? AND status='pendente' AND agendada_para<=?",
-            (usuario["tenant_id"], agora)))
-        for m in pendentes:
-            ok, detalhe = enviar_via_provedor(m["telefone"], m["texto"])
-            db.execute("UPDATE mensagens_whatsapp SET status=?, enviada_em=? WHERE id=?",
-                       ("enviada" if ok else "erro", agora, m["id"]))
-            enviadas += ok
-            erros += not ok
-    return {"enviadas": enviadas, "erros": erros}
+        return processar_fila(db, usuario["tenant_id"], agora_tenant(db, usuario["tenant_id"]))
+
+
+# ---------- interpretação de respostas ----------
+
+RESPOSTAS = {"CONFIRMAR": "confirmar", "CANCELAR": "cancelar",
+             "VOU ATRASAR": "atrasar", "ATRASAR": "atrasar"}
+
+
+def _normalizar(texto: str) -> str:
+    s = unicodedata.normalize("NFD", texto.strip().upper())
+    return "".join(c for c in s if unicodedata.category(c) != "Mn")
+
+
+def interpretar_resposta(texto: str) -> str | None:
+    return RESPOSTAS.get(_normalizar(texto))
+
+
+def aplicar_resposta(db, mensagem: dict, resposta: str | None, texto_bruto: str) -> dict:
+    """Aplica a resposta do cliente ao agendamento; ambígua vira pendência da recepção."""
+    if resposta is None:
+        db.execute(
+            "UPDATE mensagens_whatsapp SET pendente_recepcao=1, resposta=? WHERE id=?",
+            (f"ambigua: {texto_bruto[:80]}", mensagem["id"]))
+        return {"resultado": "ambigua", "encaminhado_recepcao": True}
+    db.execute("UPDATE mensagens_whatsapp SET resposta=?, pendente_recepcao=0 WHERE id=?",
+               (resposta, mensagem["id"]))
+    if mensagem["agendamento_id"]:
+        novo = {"confirmar": "confirmado", "cancelar": "cancelado", "atrasar": "atrasado"}[resposta]
+        db.execute(
+            "UPDATE agendamentos SET status=? WHERE id=? AND status IN ('agendado','confirmado')",
+            (novo, mensagem["agendamento_id"]))
+        auditar(db, mensagem["tenant_id"], None, f"whatsapp_resposta_{resposta}",
+                "agendamento", mensagem["agendamento_id"])
+    return {"resultado": resposta}
 
 
 class RespostaIn(BaseModel):
-    resposta: str  # confirmar | cancelar | atrasar
+    resposta: str
 
 
 @router.post("/{msg_id}/resposta")
-def registrar_resposta(msg_id: int, dados: RespostaIn, usuario: dict = Depends(contexto_tenant)):
-    """Registra a resposta do cliente (em produção chega via webhook do provedor)
-    e reflete o status no agendamento."""
+def registrar_resposta_manual(msg_id: int, dados: RespostaIn, usuario: dict = Depends(contexto_tenant)):
+    """Registro manual pela recepção (ex.: cliente respondeu por telefone)."""
     if dados.resposta not in ("confirmar", "cancelar", "atrasar"):
         raise HTTPException(422, "Resposta deve ser confirmar, cancelar ou atrasar")
     with get_db() as db:
@@ -61,38 +98,89 @@ def registrar_resposta(msg_id: int, dados: RespostaIn, usuario: dict = Depends(c
                            (msg_id, usuario["tenant_id"])))
         if not m:
             raise HTTPException(404, "Mensagem não encontrada")
-        db.execute("UPDATE mensagens_whatsapp SET resposta=? WHERE id=?", (dados.resposta, msg_id))
-        if m["agendamento_id"]:
-            novo_status = {"confirmar": "confirmado", "cancelar": "cancelado", "atrasar": "atrasado"}[dados.resposta]
-            db.execute("UPDATE agendamentos SET status=? WHERE id=? AND status IN ('agendado','confirmado')",
-                       (novo_status, m["agendamento_id"]))
-    return {"mensagem": f"Resposta '{dados.resposta}' registrada"}
+        return aplicar_resposta(db, m, dados.resposta, dados.resposta)
 
 
-@router.post("/campanha-aniversario")
-def campanha_aniversario(mes: int, usuario: dict = Depends(contexto_tenant)):
-    """Gera mensagens de aniversário para todos os aniversariantes do mês."""
-    if not 1 <= mes <= 12:
-        raise HTTPException(422, "Mês inválido")
-    agora = datetime.now()
-    criadas = 0
+# ---------- webhook oficial Meta ----------
+
+@router.get("/webhook", response_class=PlainTextResponse)
+def webhook_verificacao(hub_mode: str = Query(default="", alias="hub.mode"),
+                        hub_verify_token: str = Query(default="", alias="hub.verify_token"),
+                        hub_challenge: str = Query(default="", alias="hub.challenge")):
+    esperado = os.environ.get("META_WHATSAPP_VERIFY_TOKEN", "")
+    if not esperado:
+        raise HTTPException(503, "META_WHATSAPP_VERIFY_TOKEN não configurado")
+    if hub_mode == "subscribe" and hmac.compare_digest(hub_verify_token, esperado):
+        return hub_challenge
+    raise HTTPException(403, "Token de verificação inválido")
+
+
+def _validar_assinatura(corpo: bytes, cabecalho: str) -> None:
+    segredo = os.environ.get("META_APP_SECRET", "")
+    if not segredo:
+        if os.environ.get("APP_ENV", "development") == "production":
+            raise HTTPException(503, "META_APP_SECRET não configurado")
+        return  # desenvolvimento sem credenciais: aceita (documentado em docs/SECURITY.md)
+    esperada = "sha256=" + hmac.new(segredo.encode(), corpo, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(cabecalho or "", esperada):
+        raise HTTPException(403, "Assinatura do webhook inválida")
+
+
+def _evento_ja_processado(db, evento_id: str, tipo: str, payload: str) -> bool:
+    if row(db.execute("SELECT id FROM whatsapp_events WHERE evento_id=?", (evento_id,))):
+        return True
+    db.execute("INSERT INTO whatsapp_events (evento_id, tipo, payload, processado) VALUES (?,?,?,1)",
+               (evento_id, tipo, payload[:2000]))
+    return False
+
+
+STATUS_MAP = {"sent": "enviada", "delivered": "entregue", "read": "lida", "failed": "erro"}
+
+
+@router.post("/webhook")
+async def webhook_eventos(request: Request):
+    corpo = await request.body()
+    _validar_assinatura(corpo, request.headers.get("X-Hub-Signature-256", ""))
+    try:
+        payload = json.loads(corpo)
+    except json.JSONDecodeError:
+        raise HTTPException(422, "Payload inválido")
+
+    resultados = {"status_atualizados": 0, "respostas": 0, "duplicados": 0, "ignorados": 0}
     with get_db() as db:
-        barbearia = row(db.execute("SELECT nome FROM tenants WHERE id=?", (usuario["tenant_id"],)))["nome"]
-        aniversariantes = rows(db.execute(
-            "SELECT * FROM clientes WHERE tenant_id=? AND aniversario LIKE ?",
-            (usuario["tenant_id"], f"{mes:02d}-%")))
-        for c in aniversariantes:
-            dia = c["aniversario"].split("-")[1]
-            envio = f"{agora.year}-{mes:02d}-{dia}T09:00"
-            if row(db.execute(
-                    """SELECT id FROM mensagens_whatsapp WHERE tenant_id=? AND cliente_id=?
-                       AND tipo='aniversario' AND agendada_para=?""",
-                    (usuario["tenant_id"], c["id"], envio))):
-                continue
-            db.execute(
-                """INSERT INTO mensagens_whatsapp (tenant_id, cliente_id, telefone, tipo, texto, agendada_para)
-                   VALUES (?,?,?,?,?,?)""",
-                (usuario["tenant_id"], c["id"], c["telefone"], "aniversario",
-                 template_aniversario(c["nome"], barbearia), envio))
-            criadas += 1
-    return {"aniversariantes": len(aniversariantes), "mensagens_criadas": criadas}
+        for entry in payload.get("entry", []):
+            for change in entry.get("changes", []):
+                valor = change.get("value", {})
+                for st in valor.get("statuses", []):
+                    ev_id = f"status:{st.get('id')}:{st.get('status')}"
+                    if _evento_ja_processado(db, ev_id, "status", json.dumps(st)):
+                        resultados["duplicados"] += 1
+                        continue
+                    novo = STATUS_MAP.get(st.get("status", ""))
+                    if not novo:
+                        resultados["ignorados"] += 1
+                        continue
+                    # nunca rebaixar 'lida' para 'entregue' (eventos fora de ordem)
+                    db.execute(
+                        """UPDATE mensagens_whatsapp SET status=? WHERE provider_msg_id=?
+                           AND status NOT IN ('lida','falha_final','cancelada')""",
+                        (novo, st.get("id", "")))
+                    resultados["status_atualizados"] += 1
+                for msg in valor.get("messages", []):
+                    ev_id = f"msg:{msg.get('id')}"
+                    if _evento_ja_processado(db, ev_id, "mensagem", json.dumps(msg)):
+                        resultados["duplicados"] += 1
+                        continue
+                    texto = (msg.get("text") or {}).get("body", "") or \
+                            (msg.get("button") or {}).get("text", "")
+                    telefone = (msg.get("from") or "").removeprefix("55")
+                    pendente = row(db.execute(
+                        """SELECT * FROM mensagens_whatsapp
+                           WHERE telefone=? AND tipo='confirmacao' AND status IN ('enviada','entregue','lida')
+                             AND resposta='' ORDER BY agendada_para DESC LIMIT 1""", (telefone,)))
+                    if pendente:
+                        aplicar_resposta(db, pendente, interpretar_resposta(texto), texto)
+                        resultados["respostas"] += 1
+                    else:
+                        resultados["ignorados"] += 1
+    return resultados

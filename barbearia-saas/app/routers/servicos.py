@@ -36,10 +36,10 @@ def listar(usuario: dict = Depends(contexto_tenant)):
 @router.post("")
 def criar(dados: ServicoIn, usuario: dict = Depends(exigir_gerente)):
     with get_db() as db:
-        cur = db.execute(
+        sid = db.insert(
             "INSERT INTO servicos (tenant_id, nome, preco, duracao_min) VALUES (?,?,?,?)",
             (usuario["tenant_id"], dados.nome, dados.preco, dados.duracao_min))
-        return {"id": cur.lastrowid}
+        return {"id": sid}
 
 
 @router.post("/combo")
@@ -54,10 +54,9 @@ def criar_combo(dados: ComboIn, usuario: dict = Depends(exigir_gerente)):
         if len(itens) != len(set(dados.servico_ids)):
             raise HTTPException(422, "Combo só pode conter serviços simples ativos da própria barbearia")
         duracao = sum(i["duracao_min"] for i in itens)
-        cur = db.execute(
+        combo_id = db.insert(
             "INSERT INTO servicos (tenant_id, nome, preco, duracao_min, eh_combo) VALUES (?,?,?,?,1)",
             (usuario["tenant_id"], dados.nome, dados.preco, duracao))
-        combo_id = cur.lastrowid
         for i in itens:
             db.execute("INSERT INTO combo_itens (combo_id, servico_id) VALUES (?,?)", (combo_id, i["id"]))
         return {"id": combo_id, "duracao_min": duracao}

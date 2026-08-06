@@ -1,37 +1,105 @@
-"""Automação WhatsApp: templates, fila de envio e integração com provedor.
+"""Mensageria WhatsApp — arquitetura oficial Meta Cloud API.
 
-Em produção, configure META_WA_TOKEN e META_WA_PHONE_ID (WhatsApp Cloud API).
-Sem credenciais, o sistema opera em modo simulado: as mensagens entram na fila,
-são marcadas como enviadas pelo processador e ficam auditáveis na tela WhatsApp —
-com link wa.me pronto para disparo manual pela recepção.
+Camadas:
+  ProvedorMensageria (abstrato) → MetaCloudProvider | SimuladoProvider
+  Fila em banco (mensagens_whatsapp) com estados:
+    pendente → enviada → entregue → lida        (status via webhook)
+    pendente → erro → (retry com backoff) → falha_final
+  Webhook com verificação de assinatura e idempotência em app/routers/whatsapp.py.
+
+Momentos de lembrete configuráveis por tenant (tenant_settings):
+  confirmacao_min (padrão 1440 = 24h) · lembrete_min (120 = 2h) · aviso_min (30).
+
+Automação não oficial (WhatsApp Web/QR Code) NÃO é usada. O link wa.me aparece
+apenas como conveniência de disparo manual pela recepção, nunca como canal
+automatizado.
 """
 import json
 import os
 import urllib.parse
 import urllib.request
+from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 
-META_WA_TOKEN = os.environ.get("META_WA_TOKEN", "")
-META_WA_PHONE_ID = os.environ.get("META_WA_PHONE_ID", "")
+from .util import settings_tenant
 
-MESES = {"01": "janeiro", "02": "fevereiro", "03": "março", "04": "abril", "05": "maio",
-         "06": "junho", "07": "julho", "08": "agosto", "09": "setembro", "10": "outubro",
-         "11": "novembro", "12": "dezembro"}
+RETRY_BACKOFF_MIN = [1, 5, 15]      # minutos entre tentativas; depois falha_final
+MAX_TENTATIVAS = len(RETRY_BACKOFF_MIN) + 1
+
+TEMPLATES = {
+    "confirmacao_agendamento": lambda c, b, hora, servicos:
+        (f"Olá, {c.split()[0]}! 👋 Seu horário na {b} é às {hora} "
+         f"({', '.join(servicos)}). Pode confirmar? Responda: CONFIRMAR · CANCELAR · VOU ATRASAR"),
+    "lembrete_agendamento": lambda c, b, data, hora:
+        f"Olá, {c.split()[0]}! Lembrando: sua agenda na {b} está marcada para {data} às {hora}. Até lá! ✂️",
+    "aviso_final": lambda c, b, hora:
+        f"{c.split()[0]}, seu horário na {b} é daqui a pouco, às {hora}. Estamos te esperando! 💈",
+    "aniversario_cliente": lambda c, b, pct:
+        (f"Feliz aniversário, {c.split()[0]}! 🎉 A {b} preparou um presente: "
+         f"{pct:g}% de desconto. Apresente este voucher ao agendar. Válido conforme regulamento."),
+}
 
 
-def template_confirmacao(cliente: str, barbearia: str, hora: str, servicos: list[str]) -> str:
-    return (f"Olá, {cliente.split()[0]}! 👋 Seu horário na {barbearia} é hoje às {hora} "
-            f"({', '.join(servicos)}). Pode confirmar? Responda: ✅ Confirmar · ❌ Cancelar · ⏰ Vou atrasar")
+class ProvedorMensageria(ABC):
+    @abstractmethod
+    def enviar(self, telefone: str, texto: str) -> tuple[bool, str, str]:
+        """Retorna (ok, provider_msg_id, detalhe)."""
 
 
-def template_lembrete(cliente: str, barbearia: str, data: str, hora: str) -> str:
-    return (f"Olá, {cliente.split()[0]}! Lembrando: sua agenda na {barbearia} "
-            f"está marcada para {data} às {hora}. Até lá! ✂️")
+class SimuladoProvider(ProvedorMensageria):
+    """Desenvolvimento/teste: nunca toca a rede."""
+
+    def __init__(self):
+        self.enviadas: list[dict] = []
+        self.falhar = False          # testes podem forçar falha
+
+    def enviar(self, telefone: str, texto: str) -> tuple[bool, str, str]:
+        if self.falhar:
+            return False, "", "falha simulada"
+        self.enviadas.append({"telefone": telefone, "texto": texto})
+        return True, f"sim-{len(self.enviadas)}", "simulado"
 
 
-def template_aniversario(cliente: str, barbearia: str) -> str:
-    return (f"Feliz aniversário, {cliente.split()[0]}! 🎉 A {barbearia} preparou um presente: "
-            f"10% de desconto em qualquer serviço este mês. Agende seu horário!")
+class MetaCloudProvider(ProvedorMensageria):
+    """WhatsApp Business Cloud API oficial (graph.facebook.com)."""
+
+    def __init__(self):
+        self.token = os.environ["META_WHATSAPP_ACCESS_TOKEN"]
+        self.phone_id = os.environ["META_WHATSAPP_PHONE_NUMBER_ID"]
+
+    def enviar(self, telefone: str, texto: str) -> tuple[bool, str, str]:
+        numero = telefone if telefone.startswith("55") else f"55{telefone}"
+        corpo = json.dumps({"messaging_product": "whatsapp", "to": numero,
+                            "type": "text", "text": {"body": texto}}).encode()
+        req = urllib.request.Request(
+            f"https://graph.facebook.com/v21.0/{self.phone_id}/messages", data=corpo,
+            headers={"Authorization": f"Bearer {self.token}", "Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                dados = json.loads(resp.read())
+                msg_id = (dados.get("messages") or [{}])[0].get("id", "")
+                return True, msg_id, "ok"
+        except Exception as exc:
+            return False, "", str(exc)[:200]
+
+
+_provider: ProvedorMensageria | None = None
+
+
+def obter_provider() -> ProvedorMensageria:
+    global _provider
+    if _provider is None:
+        if os.environ.get("META_WHATSAPP_ACCESS_TOKEN") and os.environ.get("META_WHATSAPP_PHONE_NUMBER_ID"):
+            _provider = MetaCloudProvider()
+        else:
+            _provider = SimuladoProvider()
+    return _provider
+
+
+def definir_provider(p: ProvedorMensageria | None) -> None:
+    """Injeção para testes."""
+    global _provider
+    _provider = p
 
 
 def link_wame(telefone: str, texto: str) -> str:
@@ -39,47 +107,75 @@ def link_wame(telefone: str, texto: str) -> str:
     return f"https://wa.me/{numero}?text={urllib.parse.quote(texto)}"
 
 
+def _enfileirar(db, tenant_id: int, cliente: dict, ag_id: int | None, tipo: str,
+                template: str, texto: str, quando: datetime) -> None:
+    db.execute(
+        """INSERT INTO mensagens_whatsapp
+           (tenant_id, cliente_id, agendamento_id, telefone, tipo, template, texto, agendada_para)
+           VALUES (?,?,?,?,?,?,?,?)""",
+        (tenant_id, cliente["id"], ag_id, cliente["telefone"], tipo, template, texto,
+         quando.strftime("%Y-%m-%dT%H:%M")))
+
+
 def agendar_mensagens_do_agendamento(db, tenant_id: int, ag_id: int, cliente: dict,
-                                     barbeiro: dict, inicio: datetime, servicos: list[str]) -> None:
-    """Cria na fila: lembrete na véspera (19h) e confirmação 30 min antes."""
-    barbearia = db.execute("SELECT nome FROM tenants WHERE id=?", (tenant_id,)).fetchone()["nome"]
+                                     barbeiro: dict, inicio: datetime,
+                                     servicos: list[str], agora: datetime) -> None:
+    """Enfileira os três momentos configuráveis do tenant (pula os já passados)."""
+    from .db import row
+    barbearia = row(db.execute("SELECT nome FROM tenants WHERE id=?", (tenant_id,)))["nome"]
+    cfg = settings_tenant(db, tenant_id)
     hora = inicio.strftime("%H:%M")
     data_fmt = inicio.strftime("%d/%m")
 
-    confirmacao = inicio - timedelta(minutes=30)
-    db.execute(
-        """INSERT INTO mensagens_whatsapp (tenant_id, cliente_id, agendamento_id, telefone, tipo, texto, agendada_para)
-           VALUES (?,?,?,?,?,?,?)""",
-        (tenant_id, cliente["id"], ag_id, cliente["telefone"], "confirmacao",
-         template_confirmacao(cliente["nome"], barbearia, hora, servicos),
-         confirmacao.strftime("%Y-%m-%dT%H:%M")))
-
-    vespera = (inicio - timedelta(days=1)).replace(hour=19, minute=0)
-    if vespera > datetime.now():
-        db.execute(
-            """INSERT INTO mensagens_whatsapp (tenant_id, cliente_id, agendamento_id, telefone, tipo, texto, agendada_para)
-               VALUES (?,?,?,?,?,?,?)""",
-            (tenant_id, cliente["id"], ag_id, cliente["telefone"], "lembrete",
-             template_lembrete(cliente["nome"], barbearia, data_fmt, hora),
-             vespera.strftime("%Y-%m-%dT%H:%M")))
+    momentos = [
+        ("confirmacao", "confirmacao_agendamento", cfg["confirmacao_min"],
+         TEMPLATES["confirmacao_agendamento"](cliente["nome"], barbearia, hora, servicos)),
+        ("lembrete", "lembrete_agendamento", cfg["lembrete_min"],
+         TEMPLATES["lembrete_agendamento"](cliente["nome"], barbearia, data_fmt, hora)),
+        ("aviso_final", "aviso_final", cfg["aviso_min"],
+         TEMPLATES["aviso_final"](cliente["nome"], barbearia, hora)),
+    ]
+    for tipo, template, minutos, texto in momentos:
+        quando = inicio - timedelta(minutes=minutos)
+        if quando > agora:
+            _enfileirar(db, tenant_id, cliente, ag_id, tipo, template, texto, quando)
 
 
 def cancelar_mensagens_do_agendamento(db, ag_id: int) -> None:
-    db.execute("UPDATE mensagens_whatsapp SET status='cancelada' WHERE agendamento_id=? AND status='pendente'", (ag_id,))
+    db.execute(
+        "UPDATE mensagens_whatsapp SET status='cancelada' WHERE agendamento_id=? AND status='pendente'",
+        (ag_id,))
 
 
-def enviar_via_provedor(telefone: str, texto: str) -> tuple[bool, str]:
-    """Dispara pela WhatsApp Cloud API quando configurada; senão, simula."""
-    if not (META_WA_TOKEN and META_WA_PHONE_ID):
-        return True, "simulado"
-    numero = telefone if telefone.startswith("55") else f"55{telefone}"
-    corpo = json.dumps({"messaging_product": "whatsapp", "to": numero,
-                        "type": "text", "text": {"body": texto}}).encode()
-    req = urllib.request.Request(
-        f"https://graph.facebook.com/v21.0/{META_WA_PHONE_ID}/messages", data=corpo,
-        headers={"Authorization": f"Bearer {META_WA_TOKEN}", "Content-Type": "application/json"})
-    try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            return True, resp.read().decode()[:200]
-    except Exception as exc:  # rede/credencial: registra o erro sem derrubar a fila
-        return False, str(exc)[:200]
+def processar_fila(db, tenant_id: int, agora: datetime) -> dict:
+    """Dispara pendentes vencidas e reprocessa erros cujo backoff venceu."""
+    from .db import rows
+    marca = agora.strftime("%Y-%m-%dT%H:%M")
+    provider = obter_provider()
+    enviadas = erros = finais = 0
+    pendentes = rows(db.execute(
+        """SELECT * FROM mensagens_whatsapp
+           WHERE tenant_id=? AND (
+             (status='pendente' AND agendada_para<=?) OR
+             (status='erro' AND proximo_retry IS NOT NULL AND proximo_retry<=?))""",
+        (tenant_id, marca, marca)))
+    for m in pendentes:
+        ok, provider_id, _detalhe = provider.enviar(m["telefone"], m["texto"])
+        tentativas = m["tentativas"] + 1
+        if ok:
+            db.execute(
+                "UPDATE mensagens_whatsapp SET status='enviada', provider_msg_id=?, tentativas=?, enviada_em=?, proximo_retry=NULL WHERE id=?",
+                (provider_id, tentativas, marca, m["id"]))
+            enviadas += 1
+        elif tentativas >= MAX_TENTATIVAS:
+            db.execute(
+                "UPDATE mensagens_whatsapp SET status='falha_final', tentativas=?, proximo_retry=NULL WHERE id=?",
+                (tentativas, m["id"]))
+            finais += 1
+        else:
+            retry = agora + timedelta(minutes=RETRY_BACKOFF_MIN[tentativas - 1])
+            db.execute(
+                "UPDATE mensagens_whatsapp SET status='erro', tentativas=?, proximo_retry=? WHERE id=?",
+                (tentativas, retry.strftime("%Y-%m-%dT%H:%M"), m["id"]))
+            erros += 1
+    return {"enviadas": enviadas, "erros": erros, "falhas_finais": finais}
