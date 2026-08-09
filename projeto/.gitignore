@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Artefatos de download/extração da base oficial (grandes, gerados em runtime).
+# Mantemos apenas os fixtures em data/cache/ e o banco de amostra database/.
+data/raw/*.zip
+data/raw/extracted/
+data/raw/download_metadata.json
+data/raw/import_metadata.json
+
+# Exportações geradas
+exports/*.xlsx
+exports/*.csv
+
+# Bancos DuckDB extras gerados em testes/ingestão (o banco de amostra
+# database/cnpj_hunter.duckdb permanece versionado).
+*.duckdb.wal
+data/*.duckdb

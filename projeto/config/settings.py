@@ -6,7 +6,23 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Paths
 DOWNLOAD_PATH = os.getenv("CNPJ_DOWNLOAD_PATH", str(BASE_DIR / "data" / "raw"))
-DATABASE_FILE = os.getenv("CNPJ_DATABASE_FILE", "cnpj.duckdb")
+
+# Caminho do banco DuckDB — FONTE ÚNICA DE VERDADE.
+# Respeita a variável de ambiente CNPJ_DATABASE_FILE (aceita caminho absoluto
+# ou relativo ao diretório do projeto). Default mantém o banco existente para
+# não quebrar dados de amostra nem os testes.
+DATABASE_FILE = os.getenv(
+    "CNPJ_DATABASE_FILE",
+    str(BASE_DIR / "database" / "cnpj_hunter.duckdb"),
+)
+
+_database_path = Path(DATABASE_FILE)
+if not _database_path.is_absolute():
+    _database_path = BASE_DIR / _database_path
+DATABASE_PATH = _database_path.resolve()
+
+# Caminho do schema SQL aplicado na inicialização do banco.
+SCHEMA_PATH = BASE_DIR / "database" / "schema.sql"
 
 # Limites de busca
 MAX_DAYS_SEARCH = int(os.getenv("CNPJ_MAX_DAYS_SEARCH", "10"))
@@ -33,3 +49,4 @@ CNPJ_VERSION = os.getenv("CNPJ_VERSION", "").strip()
 def ensure_paths() -> None:
     """Garante que os diretórios configurados existam."""
     Path(DOWNLOAD_PATH).mkdir(parents=True, exist_ok=True)
+    DATABASE_PATH.parent.mkdir(parents=True, exist_ok=True)

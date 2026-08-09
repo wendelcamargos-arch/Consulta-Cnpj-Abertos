@@ -1,12 +1,14 @@
-from pathlib import Path
-
 import duckdb
+
+from config import settings
 
 
 class DatabaseService:
-    BASE_DIR = Path(__file__).resolve().parent.parent
-    DATABASE_PATH = BASE_DIR / "database" / "cnpj_hunter.duckdb"
-    SCHEMA_PATH = BASE_DIR / "database" / "schema.sql"
+    # Caminho do banco vem exclusivamente de config.settings (fonte única de
+    # verdade que respeita a variável de ambiente CNPJ_DATABASE_FILE).
+    BASE_DIR = settings.BASE_DIR
+    DATABASE_PATH = settings.DATABASE_PATH
+    SCHEMA_PATH = settings.SCHEMA_PATH
 
     @classmethod
     def initialize_database(cls) -> None:

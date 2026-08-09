@@ -151,6 +151,18 @@ def export_post(search_request: SearchRequest = Body(...)):
         limit=search_request.limit,
         page=1,
         page_size=search_request.limit or 10000,
+        situacao=search_request.situacao,
+        porte=search_request.porte,
+        natureza=search_request.natureza,
+        bairro=search_request.bairro,
+        cep=search_request.cep,
+        capital_min=search_request.capital_min,
+        capital_max=search_request.capital_max,
+        empresa_matriz=search_request.empresa_matriz,
+        empresa_filial=search_request.empresa_filial,
+        only_phone=search_request.only_phone,
+        only_email=search_request.only_email,
+        only_website=search_request.only_website,
     )
     if not results:
         raise HTTPException(status_code=404, detail="Nenhum resultado para os filtros fornecidos.")

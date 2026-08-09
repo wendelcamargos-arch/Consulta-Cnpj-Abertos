@@ -190,6 +190,54 @@ class OfficialService:
         return reports
 
     @classmethod
+    def ingest_state(
+        cls,
+        uf: str,
+        empresas_path: Optional[Path] = None,
+        estabelecimentos_path: Optional[Path] = None,
+        replace: bool = True,
+    ) -> Dict:
+        """Ingere a base oficial de UM estado, populando a tabela `empresas`.
+
+        Se `empresas_path`/`estabelecimentos_path` forem fornecidos (arquivos já
+        baixados/extraídos da Receita), usa-os diretamente — útil quando o
+        download ao vivo não está disponível. Caso contrário, tenta baixar via
+        DownloadService a partir das URLs oficiais descobertas.
+
+        A ingestão em si é delegada ao ImportService (layout real da RF).
+        """
+        if empresas_path is None or estabelecimentos_path is None:
+            candidates = cls.discover_official_candidates()
+            if not candidates:
+                raise RuntimeError(
+                    "Não foi possível descobrir a base oficial (índice inacessível "
+                    "e CNPJ_VERSION não definido). Baixe os arquivos e informe os "
+                    "caminhos em empresas_path/estabelecimentos_path."
+                )
+            downloaded = cls.execute_downloads(["empresas", "estabelecimentos"])
+            for name, path in downloaded.items():
+                extracted = ImportService.extract_zip(path)
+                for ex in extracted:
+                    kind = ImportService.detect_file_type(ex)
+                    if kind == "empresas" and empresas_path is None:
+                        empresas_path = ex
+                    elif kind == "estabelecimentos" and estabelecimentos_path is None:
+                        estabelecimentos_path = ex
+
+        if empresas_path is None or estabelecimentos_path is None:
+            raise RuntimeError(
+                "Arquivos de Empresas e/ou Estabelecimentos não encontrados para ingestão."
+            )
+
+        report = ImportService.import_receita_dataset(
+            empresas_path=Path(empresas_path),
+            estabelecimentos_path=Path(estabelecimentos_path),
+            uf=uf,
+            replace=replace,
+        )
+        return report
+
+    @classmethod
     def prepare_and_save_plan(cls) -> Dict:
         """Helper que gera o plano e salva como metadata de planejamento em data/raw/download_plan.json."""
         plan = cls.plan_for_official()

@@ -86,32 +86,16 @@ const state = {
   searchResults: [],
 };
 
+// Colunas exibidas na grade de resultados. Mantidas em sincronia com o que o
+// backend (SearchResult) realmente retorna, para não exibir colunas vazias.
 const searchColumns = [
   { key: 'select', label: '', sortable: false, width: '44px' },
   { key: 'cnpj', label: 'CNPJ', sortable: true },
   { key: 'razaoSocial', label: 'Razão Social', sortable: true },
-  { key: 'nomeFantasia', label: 'Nome Fantasia', sortable: true },
-  { key: 'telefone', label: 'Telefone', sortable: true },
-  { key: 'telefoneSecundario', label: 'Telefone Secundário', sortable: true },
-  { key: 'celular', label: 'Celular', sortable: true },
-  { key: 'whatsapp', label: 'WhatsApp', sortable: true },
-  { key: 'email', label: 'E-mail', sortable: true },
-  { key: 'website', label: 'Website', sortable: true },
-  { key: 'cep', label: 'CEP', sortable: true },
-  { key: 'endereco', label: 'Endereço', sortable: true },
-  { key: 'numero', label: 'Número', sortable: true },
-  { key: 'complemento', label: 'Complemento', sortable: true },
-  { key: 'bairro', label: 'Bairro', sortable: true },
-  { key: 'municipio', label: 'Município', sortable: true },
   { key: 'uf', label: 'UF', sortable: true },
-  { key: 'cnaePrincipal', label: 'CNAE Principal', sortable: true },
-  { key: 'cnaeDescricao', label: 'Descrição CNAE', sortable: true },
-  { key: 'naturezaJuridica', label: 'Natureza Jurídica', sortable: true },
-  { key: 'capitalSocial', label: 'Capital Social', sortable: true },
-  { key: 'porte', label: 'Porte', sortable: true },
+  { key: 'municipio', label: 'Município', sortable: true },
   { key: 'situacaoCadastral', label: 'Situação Cadastral', sortable: true },
-  { key: 'dataConstituicao', label: 'Data de Constituição', sortable: true },
-  { key: 'ultimaAtualizacao', label: 'Última Atualização', sortable: true },
+  { key: 'dataSituacao', label: 'Data da Situação', sortable: true },
 ];
 
 const selectors = {
@@ -137,108 +121,6 @@ const selectors = {
   cardAverageTime: document.getElementById('cardAverageTime'),
   exportQuickButton: document.getElementById('exportQuickButton'),
   feedbackBanner: document.getElementById('feedbackBanner'),
-};
-
-const buildDummySearchResults = () => {
-  const companies = [
-    {
-      cnpj: '12.345.678/0001-90',
-      razaoSocial: 'Alpha Tecnologia Ltda',
-      nomeFantasia: 'Alpha Tech',
-      telefone: '(11) 4000-1234',
-      telefoneSecundario: '(11) 4000-5678',
-      celular: '(11) 98765-4321',
-      whatsapp: '(11) 98765-4321',
-      email: 'contato@alphatech.com.br',
-      website: 'www.alphatech.com.br',
-      cep: '01001-000',
-      endereco: 'Av. Paulista',
-      numero: '1000',
-      complemento: 'Sala 201',
-      bairro: 'Bela Vista',
-      municipio: 'São Paulo',
-      uf: 'SP',
-      cnaePrincipal: '62.01-5-01',
-      cnaeDescricao: 'Desenvolvimento de programas de computador sob encomenda',
-      naturezaJuridica: 'Sociedade Empresária Limitada',
-      capitalSocial: 1200000,
-      porte: 'Média',
-      situacaoCadastral: 'Ativa',
-      dataConstituicao: '12/02/2014',
-      ultimaAtualizacao: '05/07/2026',
-      matriz: true,
-      filial: false,
-    },
-    {
-      cnpj: '98.765.432/0001-10',
-      razaoSocial: 'Beta Comércio e Serviços S/A',
-      nomeFantasia: 'Beta Solutions',
-      telefone: '(21) 3003-1234',
-      telefoneSecundario: '(21) 3003-5678',
-      celular: '(21) 98888-7777',
-      whatsapp: '(21) 98888-7777',
-      email: 'vendas@betasolutions.com.br',
-      website: 'www.betasolutions.com.br',
-      cep: '20010-020',
-      endereco: 'Rua da Assembleia',
-      numero: '120',
-      complemento: 'Conj. 24',
-      bairro: 'Centro',
-      municipio: 'Rio de Janeiro',
-      uf: 'RJ',
-      cnaePrincipal: '47.89-0-01',
-      cnaeDescricao: 'Comércio varejista de artigos de escritório e papelaria',
-      naturezaJuridica: 'Sociedade Anônima Fechada',
-      capitalSocial: 420000,
-      porte: 'Pequena',
-      situacaoCadastral: 'Ativa',
-      dataConstituicao: '23/08/2018',
-      ultimaAtualizacao: '28/06/2026',
-      matriz: true,
-      filial: false,
-    },
-    {
-      cnpj: '45.678.123/0001-55',
-      razaoSocial: 'Gama Saúde Ltda',
-      nomeFantasia: 'Gama Saúde',
-      telefone: '(31) 3232-1212',
-      telefoneSecundario: '',
-      celular: '(31) 99876-5432',
-      whatsapp: '(31) 99876-5432',
-      email: 'contato@gamasaude.com.br',
-      website: 'www.gamasaude.com.br',
-      cep: '30140-070',
-      endereco: 'Av. Afonso Pena',
-      numero: '5000',
-      complemento: 'Bloco A',
-      bairro: 'Centro',
-      municipio: 'Belo Horizonte',
-      uf: 'MG',
-      cnaePrincipal: '86.40-2-01',
-      cnaeDescricao: 'Atividades de atendimento hospitalar',
-      naturezaJuridica: 'Sociedade Empresária Limitada',
-      capitalSocial: 2500000,
-      porte: 'Grande',
-      situacaoCadastral: 'Ativa',
-      dataConstituicao: '05/06/2010',
-      ultimaAtualizacao: '02/07/2026',
-      matriz: true,
-      filial: false,
-    },
-  ];
-
-  const results = [];
-  for (let i = 1; i <= 50; i += 1) {
-    const base = companies[i % companies.length];
-    results.push({
-      ...base,
-      cnpj: `${base.cnpj.slice(0, 2)}.${String(100 + i).padStart(3, '0')}.${String(100 + i).padStart(3, '0')}/0001-${String(10 + (i % 90)).padStart(2, '0')}`,
-      razaoSocial: `${base.razaoSocial} ${i}`,
-      nomeFantasia: `${base.nomeFantasia} ${i}`,
-    });
-  }
-
-  return results;
 };
 
 // --- Status page actions ---
@@ -329,6 +211,10 @@ const searchPageMarkup = () => `
         <label for="searchMunicipio">Município</label>
         <input id="searchMunicipio" type="text" placeholder="São Paulo" />
       </div>
+      <div class="field-group">
+        <label for="searchCnae">CNAE</label>
+        <input id="searchCnae" type="text" placeholder="6201" />
+      </div>
       <div class="field-group compact-actions">
         <button class="primary-button" id="applySearchButton">Pesquisar</button>
         <button class="secondary-button" id="resetSearchButton">Limpar</button>
@@ -402,6 +288,7 @@ const setSearchSelectors = () => {
   selectors.searchEndDate = document.getElementById('searchEndDate');
   selectors.searchUf = document.getElementById('searchUf');
   selectors.searchMunicipio = document.getElementById('searchMunicipio');
+  selectors.searchCnae = document.getElementById('searchCnae');
   selectors.searchLimit = document.getElementById('searchLimit');
   selectors.applySearchButton = document.getElementById('applySearchButton');
   selectors.resetSearchButton = document.getElementById('resetSearchButton');
@@ -441,6 +328,7 @@ const updateSearchForm = () => {
   if (selectors.searchEndDate) selectors.searchEndDate.value = state.search.endDate;
   if (selectors.searchUf) selectors.searchUf.value = state.search.uf;
   if (selectors.searchMunicipio) selectors.searchMunicipio.value = state.search.municipio;
+  if (selectors.searchCnae) selectors.searchCnae.value = state.search.cnae;
   if (selectors.searchLimit) selectors.searchLimit.value = state.search.limit;
 };
 
@@ -483,38 +371,14 @@ const compareValues = (a, b, direction, numeric) => {
 const sortResults = (rows) => {
   const { sortKey, sortDirection } = state.searchTable;
   if (!sortKey) return rows;
-  const numericFields = ['capitalSocial'];
+  const numericFields = [];
   return [...rows].sort((a, b) => compareValues(a[sortKey], b[sortKey], sortDirection, numericFields.includes(sortKey)));
 };
 
-const filterSearchResults = () => {
-  const filters = state.search;
-  return state.searchResults.filter((row) => {
-    if (filters.startDate && filters.endDate) {
-      const start = parseDateInput(filters.startDate);
-      const end = parseDateInput(filters.endDate);
-      const rowDate = parseDateInput(row.dataConstituicao.split('/').reverse().join('-'));
-      if (!start || !end || !rowDate) return false;
-      if (rowDate < start || rowDate > end) return false;
-    }
-    if (filters.uf && !row.uf.toLowerCase().includes(filters.uf.toLowerCase())) return false;
-    if (filters.municipio && !row.municipio.toLowerCase().includes(filters.municipio.toLowerCase())) return false;
-    if (filters.bairro && !row.bairro.toLowerCase().includes(filters.bairro.toLowerCase())) return false;
-    if (filters.cep && !row.cep.toLowerCase().includes(filters.cep.toLowerCase())) return false;
-    if (filters.cnae && !row.cnaePrincipal.toLowerCase().includes(filters.cnae.toLowerCase())) return false;
-    if (filters.natureza && !row.naturezaJuridica.toLowerCase().includes(filters.natureza.toLowerCase())) return false;
-    if (filters.situacao && row.situacaoCadastral !== filters.situacao) return false;
-    if (filters.porte && !row.porte.toLowerCase().includes(filters.porte.toLowerCase())) return false;
-    if (filters.capitalMin && Number(row.capitalSocial) < Number(filters.capitalMin)) return false;
-    if (filters.capitalMax && Number(row.capitalSocial) > Number(filters.capitalMax)) return false;
-    if (filters.empresaMatriz && !row.matriz) return false;
-    if (filters.empresaFilial && !row.filial) return false;
-    if (filters.onlyPhone && !(row.telefone || row.telefoneSecundario || row.celular)) return false;
-    if (filters.onlyEmail && !row.email) return false;
-    if (filters.onlyWebsite && !row.website) return false;
-    return true;
-  });
-};
+// O backend (SearchService) já aplica todos os filtros no SQL, então a grade
+// apenas exibe o que a API retornou — sem re-filtrar no cliente (o que poderia
+// esconder registros válidos).
+const filterSearchResults = () => state.searchResults;
 
 const isValidDate = (dateObj) => dateObj instanceof Date && !Number.isNaN(dateObj.getTime());
 
@@ -583,36 +447,17 @@ const renderSearchTable = () => {
     })
     .join('');
 
+  const dataColumns = searchColumns.filter((column) => column.key !== 'select');
   const rows = pageRows
     .map((row) => {
       const isChecked = state.searchTable.selected.has(row.cnpj);
+      const cells = dataColumns
+        .map((column) => `<td>${row[column.key] ?? '-'}</td>`)
+        .join('');
       return `
         <tr>
           <td class="checkbox-cell"><input type="checkbox" class="row-checkbox" data-cnpj="${row.cnpj}" ${isChecked ? 'checked' : ''} /></td>
-          <td>${row.cnpj}</td>
-          <td>${row.razaoSocial}</td>
-          <td>${row.nomeFantasia}</td>
-          <td>${row.telefone}</td>
-          <td>${row.telefoneSecundario || '-'}</td>
-          <td>${row.celular || '-'}</td>
-          <td>${row.whatsapp || '-'}</td>
-          <td>${row.email}</td>
-          <td>${row.website}</td>
-          <td>${row.cep}</td>
-          <td>${row.endereco}</td>
-          <td>${row.numero}</td>
-          <td>${row.complemento || '-'}</td>
-          <td>${row.bairro}</td>
-          <td>${row.municipio}</td>
-          <td>${row.uf}</td>
-          <td>${row.cnaePrincipal}</td>
-          <td>${row.cnaeDescricao}</td>
-          <td>${row.naturezaJuridica}</td>
-          <td>${formatCurrency(row.capitalSocial)}</td>
-          <td>${row.porte}</td>
-          <td>${row.situacaoCadastral}</td>
-          <td>${row.dataConstituicao}</td>
-          <td>${row.ultimaAtualizacao}</td>
+          ${cells}
         </tr>
       `;
     })
@@ -718,36 +563,19 @@ const updateSearchState = () => {
   if (selectors.searchEndDate) state.search.endDate = selectors.searchEndDate.value;
   if (selectors.searchUf) state.search.uf = selectors.searchUf.value;
   if (selectors.searchMunicipio) state.search.municipio = selectors.searchMunicipio.value;
+  if (selectors.searchCnae) state.search.cnae = selectors.searchCnae.value;
   if (selectors.searchLimit) state.search.limit = selectors.searchLimit.value;
 };
 
+// Mapeia a linha da API (SearchResult) para as colunas exibidas. Só os campos
+// que o backend realmente entrega.
 const mapApiSearchResult = (row) => ({
   cnpj: row.cnpj || '',
   razaoSocial: row.nome || '',
-  nomeFantasia: row.nome || '',
-  telefone: '',
-  telefoneSecundario: '',
-  celular: '',
-  whatsapp: '',
-  email: '',
-  website: '',
-  cep: '',
-  endereco: '',
-  numero: '',
-  complemento: '',
-  bairro: '',
-  municipio: row.municipio || '',
   uf: row.uf || '',
-  cnaePrincipal: '',
-  cnaeDescricao: '',
-  naturezaJuridica: '',
-  capitalSocial: 0,
-  porte: '',
+  municipio: row.municipio || '',
   situacaoCadastral: row.situacao || '',
-  dataConstituicao: row.data_situacao || '',
-  ultimaAtualizacao: '',
-  matriz: false,
-  filial: false,
+  dataSituacao: row.data_situacao || '',
 });
 
 const loadSearchResultsFromApi = async () => {
@@ -760,6 +588,7 @@ const loadSearchResultsFromApi = async () => {
       end_date: state.search.endDate,
       uf: state.search.uf || undefined,
       municipio: state.search.municipio || undefined,
+      cnae: state.search.cnae || undefined,
       limit: Number(state.search.limit || 100),
       page: 1,
       page_size: Number(state.search.limit || 100),

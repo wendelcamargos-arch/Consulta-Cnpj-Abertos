@@ -1,0 +1,47 @@
+# Blueprint de deploy do CNPJ Hunter Pro no Render (https://render.com).
+#
+# Como usar:
+#   1. Conecte o repositório no Render (New > Blueprint) apontando para este arquivo.
+#   2. O Render cria um Web Service Python rodando a API FastAPI via uvicorn.
+#   3. Um disco persistente guarda o banco DuckDB e os arquivos baixados da
+#      Receita entre deploys (sem ele a base seria perdida a cada restart).
+#
+# Observação: disco persistente exige um plano pago (starter+). Para um teste
+# efêmero sem disco, remova o bloco `disk` e ajuste CNPJ_DATABASE_FILE/CNPJ_DOWNLOAD_PATH.
+
+services:
+  - type: web
+    name: cnpj-hunter-pro
+    runtime: python
+    plan: starter
+    # O código da aplicação vive na pasta projeto/ dentro do repositório.
+    rootDir: projeto
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      # Caminho do banco DuckDB — fonte única de verdade (config/settings.py).
+      # Aponta para o disco persistente montado abaixo.
+      - key: CNPJ_DATABASE_FILE
+        value: /var/data/cnpj_hunter.duckdb
+      # Diretório de download/extração da base oficial (também no disco).
+      - key: CNPJ_DOWNLOAD_PATH
+        value: /var/data/raw
+      - key: CNPJ_MAX_DAYS_SEARCH
+        value: "10"
+      - key: CNPJ_MAX_RESULTS
+        value: "10000"
+      # Em produção, a ingestão da base é feita sob demanda (não a cada boot).
+      - key: CNPJ_AUTO_UPDATE
+        value: "false"
+      - key: CNPJ_OFFICIAL_BASE_URL
+        value: "https://arquivos.receitafederal.gov.br/dados/cnpj/dados_abertos_cnpj/"
+      - key: CNPJ_OFFICIAL_FALLBACK_URL
+        value: "https://dadosabertos.rfb.gov.br/CNPJ/dados_abertos_cnpj/"
+    disk:
+      name: cnpj-data
+      mountPath: /var/data
+      sizeGB: 10

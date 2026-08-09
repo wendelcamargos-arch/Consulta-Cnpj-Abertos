@@ -45,6 +45,18 @@ def search(request: SearchRequest):
             limit=request.limit,
             page=request.page or 1,
             page_size=request.page_size or 10,
+            situacao=request.situacao,
+            porte=request.porte,
+            natureza=request.natureza,
+            bairro=request.bairro,
+            cep=request.cep,
+            capital_min=request.capital_min,
+            capital_max=request.capital_max,
+            empresa_matriz=request.empresa_matriz,
+            empresa_filial=request.empresa_filial,
+            only_phone=request.only_phone,
+            only_email=request.only_email,
+            only_website=request.only_website,
         )
     except Exception as exc:
         logger.exception("Erro ao executar busca: %s", exc)

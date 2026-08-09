@@ -21,7 +21,27 @@
 - [ ] Criar um canal de recebimento de bugs e pedidos de ajuste.
 
 ## 4. Melhorias para versão 1.1
-- [ ] Adicionar paginação real no backend para navegação mais ampla.
+- [x] Adicionar paginação real no backend para navegação mais ampla (page/page_size/offset).
 - [ ] Melhorar mapeamento de colunas para exportação.
-- [ ] Incluir filtros mais completos compatíveis com a base.
+- [x] Incluir filtros mais completos compatíveis com a base (todos os filtros do
+      SearchRequest implementados no SQL — ver `docs/filtros.md`).
 - [ ] Adicionar autenticação/controle de acesso para uso comercial.
+
+## 5. Endurecimento para o beta (esta rodada)
+- [x] Caminho do DuckDB unificado numa fonte única de verdade que respeita
+      `CNPJ_DATABASE_FILE` (config/settings.py). O setting não é mais ignorado.
+- [x] `render.yaml` válido para deploy no Render (uvicorn + disco persistente + env vars).
+- [x] UI × backend alinhados: filtros implementados no SQL e grade de resultados
+      enxugada para as colunas realmente entregues (sem colunas vazias).
+- [x] Pipeline de ingestão adaptado ao formato REAL da Receita (arquivos
+      posicionais, sem cabeçalho, latin-1; JOIN Empresas×Estabelecimentos).
+- [x] Teste automatizado provando que `/search` retorna dados reais de SP
+      (tests/test_real_data.py) — ingestão de 20k+ empresas em < 1s.
+- [ ] Baixar a base nacional real da Receita no ambiente de produção
+      (bloqueado neste sandbox pela política de rede; o importador já está pronto
+      para o layout oficial e roda em ambiente com acesso aos domínios da RF).
+
+## 6. O que ainda falta para o beta comercial
+- [ ] **Login / autenticação** de usuários (controle de acesso).
+- [ ] **Pagamento / assinatura** (cobrança dos escritórios).
+- [ ] Definir processo de suporte e canal de bugs (itens da seção 3).

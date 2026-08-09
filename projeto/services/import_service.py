@@ -14,6 +14,31 @@ from services.database_service import DatabaseService
 logger = logging.getLogger(__name__)
 
 
+# Layout POSICIONAL dos arquivos oficiais da Receita (CSV sem cabeçalho, ';',
+# latin-1, campos entre aspas). Ordem das colunas conforme layout público da RF.
+RECEITA_EMPRESAS_COLUMNS = [
+	"cnpj_basico", "razao_social", "natureza_juridica", "qualificacao_responsavel",
+	"capital_social", "porte", "ente_federativo",
+]
+RECEITA_ESTABELECIMENTOS_COLUMNS = [
+	"cnpj_basico", "cnpj_ordem", "cnpj_dv", "identificador_matriz_filial",
+	"nome_fantasia", "situacao_cadastral", "data_situacao_cadastral",
+	"motivo_situacao_cadastral", "nome_cidade_exterior", "pais",
+	"data_inicio_atividade", "cnae_fiscal_principal", "cnae_fiscal_secundaria",
+	"tipo_logradouro", "logradouro", "numero", "complemento", "bairro", "cep",
+	"uf", "municipio", "ddd_1", "telefone_1", "ddd_2", "telefone_2", "ddd_fax",
+	"fax", "correio_eletronico", "situacao_especial", "data_situacao_especial",
+]
+
+
+def _columns_struct(names) -> str:
+	"""Monta o struct de colunas para read_csv (todas como VARCHAR).
+
+	Os nomes são constantes internas (não entrada de usuário), seguro interpolar.
+	"""
+	return "{" + ",".join(f"'{n}':'VARCHAR'" for n in names) + "}"
+
+
 class ImportService:
 	RAW_DIR = Path(DOWNLOAD_PATH)
 	EXTRACTED_DIR = RAW_DIR / "extracted"
@@ -77,17 +102,19 @@ class ImportService:
 	@classmethod
 	def detect_file_type(cls, path: Path) -> str:
 		name = path.name.lower()
-		if "empresa" in name or "empresas" in name:
+		# Nomes REAIS da Receita usam sufixos como .EMPRECSV / .ESTABELE /
+		# .CNAECSV / .NATURCSV / .MUNICCSV / .SIMPLES (arquivos sem cabeçalho).
+		if "empre" in name:
 			return "empresas"
-		if "estabele" in name or "estabelecimentos" in name:
+		if "estabele" in name:
 			return "estabelecimentos"
 		if "simples" in name or "sn" in name:
 			return "simples"
 		if "cnae" in name:
 			return "cnaes"
-		if "natureza" in name:
+		if "natur" in name:
 			return "naturezas"
-		if "municipio" in name or "municipios" in name or "municipio" in name:
+		if "munic" in name:
 			return "municipios"
 
 		# Fallback: inspect header for known columns
@@ -339,4 +366,122 @@ class ImportService:
 
 		logger.info('Importacao concluida para %s: %d linhas, tempo %.2fs, erros %d', file_path.name, rows_imported, elapsed, len(errors))
 		return {"file": file_path.name, "rows": rows_imported, "time_s": elapsed, "errors": errors}
+
+	# Mapeia o código de situação cadastral da RF para texto legível.
+	_SITUACAO_CASE = (
+		"CASE est.situacao_cadastral "
+		"WHEN '01' THEN 'Nula' WHEN '02' THEN 'Ativa' WHEN '03' THEN 'Suspensa' "
+		"WHEN '04' THEN 'Inapta' WHEN '08' THEN 'Baixada' "
+		"ELSE est.situacao_cadastral END"
+	)
+	_PORTE_CASE = (
+		"CASE emp.porte "
+		"WHEN '00' THEN 'Nao informado' WHEN '01' THEN 'Micro Empresa' "
+		"WHEN '03' THEN 'Pequeno Porte' WHEN '05' THEN 'Demais' "
+		"ELSE emp.porte END"
+	)
+
+	@classmethod
+	def import_receita_dataset(
+		cls,
+		empresas_path: Path,
+		estabelecimentos_path: Path,
+		uf: Optional[str] = None,
+		replace: bool = False,
+	) -> Dict:
+		"""Ingere os arquivos OFICIAIS da Receita (layout posicional, sem cabeçalho)
+		construindo a tabela denormalizada `empresas` que o /search consulta.
+
+		Diferente de `import_file_streaming` (que espera CSVs internos com header),
+		este método:
+		  * lê os arquivos no formato real da RF (';', latin-1, aspas, sem header);
+		  * junta Empresas + Estabelecimentos por `cnpj_basico` (UF/município/
+		    situação/CNAE vivem em Estabelecimentos, não em Empresas);
+		  * usa DuckDB `read_csv` nativo (escalável) em vez de laço linha-a-linha;
+		  * opcionalmente filtra por UF (ex.: 'SP') e traduz município/CNAE quando
+		    as tabelas de apoio (`municipios`, `cnaes`) estiverem populadas.
+
+		Retorna um relatório com a contagem de empresas inseridas e o tempo.
+		"""
+		cls.create_tables()
+
+		emp_struct = _columns_struct(RECEITA_EMPRESAS_COLUMNS)
+		est_struct = _columns_struct(RECEITA_ESTABELECIMENTOS_COLUMNS)
+
+		read_opts = "delim=';', header=false, quote='\"', escape='\"', encoding='latin-1', ignore_errors=true, null_padding=true"
+
+		select_sql = f"""
+			SELECT
+				est.cnpj_basico || est.cnpj_ordem || est.cnpj_dv AS cnpj,
+				emp.razao_social,
+				est.nome_fantasia,
+				emp.natureza_juridica,
+				TRY_CAST(replace(emp.capital_social, ',', '.') AS DOUBLE) AS capital_social,
+				TRY_CAST(TRY_STRPTIME(est.data_inicio_atividade, '%Y%m%d') AS DATE) AS data_constituicao,
+				{cls._SITUACAO_CASE} AS situacao_cadastral,
+				TRY_CAST(TRY_STRPTIME(est.data_situacao_cadastral, '%Y%m%d') AS DATE) AS data_situacao,
+				est.uf,
+				COALESCE(m.nome, est.municipio) AS municipio,
+				est.bairro,
+				NULLIF(TRIM(COALESCE(est.tipo_logradouro,'') || ' ' || COALESCE(est.logradouro,'')), '') AS endereco,
+				est.numero,
+				est.complemento,
+				est.cep,
+				NULLIF(TRIM(COALESCE(est.ddd_1,'') || COALESCE(est.telefone_1,'')), '') AS telefone,
+				NULLIF(TRIM(est.correio_eletronico), '') AS email,
+				NULL AS website,
+				est.cnae_fiscal_principal AS cnae_principal,
+				c.descricao AS cnae_descricao,
+				{cls._PORTE_CASE} AS porte,
+				(est.identificador_matriz_filial = '1') AS matriz,
+				(est.identificador_matriz_filial = '2') AS filial,
+				current_date AS ultima_atualizacao
+			FROM read_csv(?, {read_opts}, columns={est_struct}) est
+			JOIN read_csv(?, {read_opts}, columns={emp_struct}) emp
+				ON est.cnpj_basico = emp.cnpj_basico
+			LEFT JOIN municipios m ON m.codigo_ibge = est.municipio
+			LEFT JOIN cnaes c ON c.codigo = est.cnae_fiscal_principal
+			WHERE 1=1
+		"""
+		params: List = [str(estabelecimentos_path), str(empresas_path)]
+		if uf:
+			select_sql += " AND est.uf = ?"
+			params.append(uf.upper())
+
+		insert_sql = (
+			"INSERT INTO empresas (cnpj, razao_social, nome_fantasia, natureza_juridica, "
+			"capital_social, data_constituicao, situacao_cadastral, data_situacao, uf, "
+			"municipio, bairro, endereco, numero, complemento, cep, telefone, email, "
+			"website, cnae_principal, cnae_descricao, porte, matriz, filial, ultima_atualizacao) "
+			+ select_sql
+		)
+
+		start_time = time.time()
+		inserted = 0
+		with DatabaseService.get_connection() as conn:
+			if replace and uf:
+				conn.execute("DELETE FROM empresas WHERE uf = ?", [uf.upper()])
+			elif replace:
+				conn.execute("DELETE FROM empresas")
+			conn.execute("BEGIN TRANSACTION")
+			try:
+				conn.execute(insert_sql, params)
+				conn.execute("COMMIT")
+			except Exception:
+				conn.execute("ROLLBACK")
+				logger.exception("Falha ao importar dataset oficial da Receita")
+				raise
+			if uf:
+				inserted = conn.execute(
+					"SELECT COUNT(*) FROM empresas WHERE uf = ?", [uf.upper()]
+				).fetchone()[0]
+			else:
+				inserted = conn.execute("SELECT COUNT(*) FROM empresas").fetchone()[0]
+
+		elapsed = time.time() - start_time
+		logger.info(
+			"Dataset oficial importado (uf=%s): %d empresas em %.2fs",
+			uf or "todas", inserted, elapsed,
+		)
+		return {"uf": uf, "empresas": inserted, "time_s": elapsed}
 
