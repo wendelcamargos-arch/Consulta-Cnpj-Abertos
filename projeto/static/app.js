@@ -1,59 +1,15 @@
 const pages = ['search', 'exports'];
 
 const state = {
-  activePage: 'dashboard',
-  importRunning: false,
-  logs: [
-    'Sistema inicializado.',
-    'Interface pronta para integração com a base oficial.',
-  ],
-  history: [
-    {
-      date: '09/07/2026',
-      time: '09:12',
-      startDate: '01/07/2026',
-      endDate: '05/07/2026',
-      uf: 'SP',
-      municipio: 'São Paulo',
-      quantity: 245,
-      duration: '1.8s',
-    },
-    {
-      date: '08/07/2026',
-      time: '16:40',
-      startDate: '20/06/2026',
-      endDate: '25/06/2026',
-      uf: 'RJ',
-      municipio: 'Rio de Janeiro',
-      quantity: 172,
-      duration: '2.4s',
-    },
-  ],
-  exports: [
-    {
-      name: 'empresa_sp_02072026.xlsx',
-      date: '09/07/2026',
-      time: '10:05',
-      quantity: 320,
-      format: 'Excel',
-      status: 'Concluído',
-    },
-    {
-      name: 'empresas_rj_08072026.csv',
-      date: '09/07/2026',
-      time: '11:19',
-      quantity: 180,
-      format: 'CSV',
-      status: 'Concluído',
-    },
-  ],
+  activePage: 'search',
+  // Exportações geradas nesta sessão. Começa vazio de propósito: não existe
+  // endpoint que devolva exportações anteriores, e semear linhas aqui seria
+  // apresentar dado simulado como se fosse real.
+  exports: [],
   config: {
+    // Espelha o limite do backend (CNPJ_MAX_DAYS_SEARCH) para validar antes de
+    // chamar a API. É o único item de configuração efetivamente usado.
     maxDays: 10,
-    maxRecords: 10000,
-    baseFolder: '/dados/base_oficial',
-    exportFolder: '/dados/export',
-    theme: 'light',
-    language: 'pt-BR',
   },
   search: {
     startDate: '',
@@ -82,6 +38,9 @@ const state = {
     page: 1,
     pageSize: 10,
     selected: new Set(),
+    // total_count devolvido pela API na última busca. null = ainda não houve
+    // busca; nunca deve ser exibido como zero.
+    totalCount: null,
   },
   searchResults: [],
 };
@@ -102,83 +61,16 @@ const selectors = {
   pageTitle: document.getElementById('pageTitle'),
   pageHeading: document.getElementById('pageHeading'),
   sidebarLinks: document.querySelectorAll('.sidebar-link'),
+  // Apenas os painéis que existem de fato no template. Referenciar páginas
+  // inexistentes devolvia null e fazia setPage() lançar TypeError, quebrando a
+  // navegação da barra lateral.
   pagePanels: {
-    dashboard: document.getElementById('dashboardPage'),
     search: document.getElementById('searchPage'),
-    import: document.getElementById('importPage'),
-    update: document.getElementById('updatePage'),
-    history: document.getElementById('historyPage'),
     exports: document.getElementById('exportsPage'),
-    status: document.getElementById('statusPage'),
-    settings: document.getElementById('settingsPage'),
-    logs: document.getElementById('logsPage'),
   },
-  themeToggle: document.getElementById('themeToggle'),
-  cardCompanies: document.getElementById('cardCompanies'),
-  cardEstablishments: document.getElementById('cardEstablishments'),
-  cardLastUpdate: document.getElementById('cardLastUpdate'),
-  cardSearchCount: document.getElementById('cardSearchCount'),
-  cardAverageTime: document.getElementById('cardAverageTime'),
   exportQuickButton: document.getElementById('exportQuickButton'),
   feedbackBanner: document.getElementById('feedbackBanner'),
 };
-
-// --- Status page actions ---
-const fetchStatus = async () => {
-  try {
-    const res = await fetch('/test/status');
-    const data = await res.json();
-    if (!data.success) return;
-    const meta = data.metadata || {};
-    const stats = data.db_stats || {};
-    selectors.statusVersion.textContent = meta.file_name || meta.url || '—';
-    selectors.statusCompanies.textContent = (stats.total_companies || 0).toLocaleString();
-    selectors.statusEstablishments.textContent = '—';
-    selectors.statusImported.textContent = (stats.total_companies || 0).toLocaleString();
-    selectors.statusDownloadTime.textContent = meta.time_s ? meta.time_s + 's' : '—';
-    selectors.statusImportTime.textContent = '—';
-    selectors.statusIndexTime.textContent = '—';
-    selectors.statusDiskUsage.textContent = '—';
-    selectors.statusOverall.textContent = 'Pronto';
-  } catch (err) {
-    console.error(err);
-  }
-};
-
-const runTestPipeline = async () => {
-  selectors.statusReport.textContent = 'Executando teste (modo seguro, sem download)...\n';
-  try {
-    const res = await fetch('/test/pipeline', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({allow_download: false}),
-    });
-    const data = await res.json();
-    if (!data.success) {
-      selectors.statusReport.textContent += 'Falha: ' + JSON.stringify(data);
-      return;
-    }
-    selectors.statusReport.textContent += JSON.stringify(data.report, null, 2);
-    // refresh status
-    fetchStatus();
-  } catch (err) {
-    selectors.statusReport.textContent += 'Erro: ' + err.toString();
-  }
-};
-
-if (selectors.runTestButton) {
-  selectors.runTestButton.addEventListener('click', () => runTestPipeline());
-}
-
-// Load status initially
-fetchStatus();
-
-const formatCurrency = (value) =>
-  value.toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    minimumFractionDigits: 2,
-  });
 
 const parseDateInput = (value) => {
   if (!value) return null;
@@ -343,11 +235,14 @@ const renderSearchSummary = () => {
   const visible = filterSearchResults();
   const message = visible.length === 0 ? 'Nenhum resultado encontrado' : `${visible.length.toLocaleString('pt-BR')} resultado(s)`;
   if (selectors.searchSummary) {
+    // Só indicadores com origem real. Os cartões de tempo de pesquisa, tempo de
+    // servidor e data da base eram valores fixos no código — nenhum backend os
+    // fornece, então foram removidos em vez de exibidos como métrica.
+    const totalCount = state.searchTable.totalCount;
+    const totalLabel = totalCount === null ? '—' : totalCount.toLocaleString('pt-BR');
     selectors.searchSummary.innerHTML = [
-      buildCard('Quantidade encontrada', message),
-      buildCard('Tempo da pesquisa', '≤ 1s'),
-      buildCard('Tempo do servidor', '≤ 0.3s'),
-      buildCard('Última atualização da base', '09/07/2026 11:32'),
+      buildCard('Resultados carregados', message),
+      buildCard('Total na base para os filtros', totalLabel),
     ].join('');
   }
   if (selectors.searchResultsMessage) {
@@ -607,6 +502,7 @@ const loadSearchResultsFromApi = async () => {
     }
 
     state.searchResults = (data.results || []).map(mapApiSearchResult);
+    state.searchTable.totalCount = typeof data.total_count === 'number' ? data.total_count : null;
     state.searchTable.page = 1;
     renderSearchSummary();
     renderSearchTable();
@@ -648,25 +544,10 @@ const resetSearch = () => {
   state.searchTable.filter = '';
   state.searchTable.page = 1;
   state.searchTable.selected.clear();
+  state.searchTable.totalCount = null;
   state.searchResults = [];
   updateSearchForm();
   renderSearchSummary();
-  renderSearchTable();
-};
-
-const toggleSelectAll = () => {
-  const filtered = sortResults(filterSearchResults()).slice(0, Number(state.search.limit));
-  const start = (state.searchTable.page - 1) * state.searchTable.pageSize;
-  const pageRows = filtered.slice(start, start + state.searchTable.pageSize);
-  const allSelected = pageRows.length > 0 && pageRows.every((row) => state.searchTable.selected.has(row.cnpj));
-
-  pageRows.forEach((row) => {
-    if (allSelected) {
-      state.searchTable.selected.delete(row.cnpj);
-    } else {
-      state.searchTable.selected.add(row.cnpj);
-    }
-  });
   renderSearchTable();
 };
 
@@ -688,6 +569,14 @@ const initSearchEvents = () => {
 
 const renderExportHistory = () => {
   if (!selectors.exportHistoryBody) return;
+  if (state.exports.length === 0) {
+    selectors.exportHistoryBody.innerHTML = `
+      <tr>
+        <td colspan="6">Nenhuma exportação registrada nesta sessão.</td>
+      </tr>
+    `;
+    return;
+  }
   selectors.exportHistoryBody.innerHTML = state.exports
     .map(
       (item) => `
@@ -713,42 +602,9 @@ const buildExportData = () => {
   return filtered;
 };
 
-const downloadFile = (content, filename, type) => {
-  const blob = new Blob([content], { type });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = filename;
-  anchor.click();
-  URL.revokeObjectURL(url);
-};
-
-const exportToCsv = (rows, filename) => {
-  const headers = searchColumns.filter((column) => column.key !== 'select').map((column) => `"${column.label}"`).join(',');
-  const body = rows
-    .map((row) =>
-      searchColumns
-        .filter((column) => column.key !== 'select')
-        .map((column) => `"${String(row[column.key] ?? '').replace(/"/g, '""')}"`)
-        .join(',')
-    )
-    .join('\n');
-  downloadFile(`${headers}\n${body}`, `${filename}.csv`, 'text/csv;charset=utf-8;');
-};
-
-const exportToExcel = (rows, filename) => {
-  const headers = searchColumns.filter((column) => column.key !== 'select').map((column) => column.label).join('\t');
-  const body = rows
-    .map((row) =>
-      searchColumns
-        .filter((column) => column.key !== 'select')
-        .map((column) => row[column.key] ?? '')
-        .join('\t')
-    )
-    .join('\n');
-  downloadFile(`${headers}\n${body}`, `${filename}.xls`, 'application/vnd.ms-excel');
-};
-
+// A exportação é sempre server-side (/export/excel e /export/csv). As funções
+// client-side que geravam o arquivo no navegador foram removidas: estavam sem
+// chamador e produziam um .xls que na verdade era texto separado por tabulação.
 const exportResults = async (format) => {
   updateSearchState();
   if (!validateSearchForm()) return;
@@ -775,9 +631,25 @@ const exportResults = async (format) => {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = `cnpj_hunter_export_${new Date().toISOString().slice(0, 10)}.${format === 'CSV' ? 'csv' : 'xlsx'}`;
+    const filename = `cnpj_hunter_export_${new Date().toISOString().slice(0, 10)}.${format === 'CSV' ? 'csv' : 'xlsx'}`;
+    anchor.download = filename;
     anchor.click();
     URL.revokeObjectURL(url);
+
+    // Registra a exportação que realmente aconteceu. A quantidade de linhas não
+    // é informada pelo endpoint de exportação, então fica como desconhecida em
+    // vez de receber um número estimado.
+    const now = new Date();
+    state.exports.unshift({
+      name: filename,
+      date: now.toLocaleDateString('pt-BR'),
+      time: now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      quantity: '—',
+      format,
+      status: 'Concluído',
+    });
+    renderExportHistory();
+
     showFeedback(`Exportação ${format} gerada com sucesso.`);
   } catch (error) {
     console.error(error);
@@ -798,56 +670,6 @@ const initExportEvents = () => {
   }
 };
 
-const updateDashboard = () => {
-  selectors.cardCompanies.textContent = '1.280.000';
-  selectors.cardEstablishments.textContent = '4.560.000';
-  selectors.cardLastUpdate.textContent = '09/07/2026 11:32';
-  selectors.cardSearchCount.textContent = '428';
-  selectors.cardAverageTime.textContent = '1.9s';
-};
-
-const updateImportInfo = () => {
-  selectors.importLastUpdate.textContent = '09/07/2026 11:32';
-  selectors.importCompanies.textContent = '1.280.000';
-  selectors.importEstablishments.textContent = '4.560.000';
-  selectors.importDuration.textContent = '18m 32s';
-  selectors.importStatus.textContent = 'Base pronta';
-  selectors.importLog.textContent = state.logs.join('\n');
-  selectors.importProgress.style.width = '100%';
-};
-
-const updateHistory = () => {
-  selectors.historyBody.innerHTML = state.history
-    .map(
-      (item) => `
-        <tr>
-          <td>${item.date}</td>
-          <td>${item.time}</td>
-          <td>${item.startDate}</td>
-          <td>${item.endDate}</td>
-          <td>${item.uf}</td>
-          <td>${item.municipio}</td>
-          <td>${item.quantity}</td>
-          <td>${item.duration}</td>
-        </tr>
-      `,
-    )
-    .join('');
-};
-
-const updateSettings = () => {
-  selectors.maxDays.value = state.config.maxDays;
-  selectors.maxRecords.value = state.config.maxRecords;
-  selectors.baseFolder.value = state.config.baseFolder;
-  selectors.exportFolder.value = state.config.exportFolder;
-  selectors.uiTheme.value = state.config.theme;
-  selectors.language.value = state.config.language;
-};
-
-const updateLogs = () => {
-  selectors.systemLogs.textContent = state.logs.join('\n');
-};
-
 const showFeedback = (message) => {
   selectors.feedbackBanner.textContent = message;
   selectors.feedbackBanner.classList.add('show');
@@ -858,94 +680,24 @@ const showFeedback = (message) => {
 };
 
 const setPage = (pageKey) => {
+  if (!pages.includes(pageKey)) return;
   state.activePage = pageKey;
   const titleMap = {
-    dashboard: 'Dashboard',
-    search: 'Pesquisar Empresas',
-    import: 'Importar Base Receita',
-    update: 'Atualização',
+    search: 'Pesquisar',
     exports: 'Exportações',
-    history: 'Histórico',
-    settings: 'Configurações',
-    logs: 'Logs',
   };
 
-  selectors.pageTitle.textContent = titleMap[pageKey];
-  selectors.pageHeading.textContent = titleMap[pageKey];
+  if (selectors.pageTitle) selectors.pageTitle.textContent = titleMap[pageKey];
+  if (selectors.pageHeading) selectors.pageHeading.textContent = titleMap[pageKey];
 
   Object.entries(selectors.pagePanels).forEach(([key, panel]) => {
+    if (!panel) return;
     panel.classList.toggle('hidden', key !== pageKey);
   });
 
   selectors.sidebarLinks.forEach((button) => {
     button.classList.toggle('active', button.dataset.page === pageKey);
   });
-};
-
-const applyConfigChanges = () => {
-  state.config.maxDays = Number(selectors.maxDays.value);
-  state.config.maxRecords = Number(selectors.maxRecords.value);
-  state.config.baseFolder = selectors.baseFolder.value;
-  state.config.exportFolder = selectors.exportFolder.value;
-  state.config.theme = selectors.uiTheme.value;
-  state.config.language = selectors.language.value;
-
-  document.body.classList.toggle('theme-dark', state.config.theme === 'dark');
-  document.body.classList.toggle('theme-light', state.config.theme === 'light');
-  selectors.themeToggle.textContent = state.config.theme === 'dark' ? 'Modo Claro' : 'Modo Escuro';
-  showFeedback('Configurações salvas com sucesso.');
-};
-
-const resetConfig = () => {
-  state.config = {
-    maxDays: 10,
-    maxRecords: 10000,
-    baseFolder: '/dados/base_oficial',
-    exportFolder: '/dados/export',
-    theme: 'light',
-    language: 'pt-BR',
-  };
-  updateSettings();
-  applyConfigChanges();
-  showFeedback('Configurações restauradas aos valores padrão.');
-};
-
-const addLog = (message) => {
-  const timestamp = new Date().toLocaleString('pt-BR');
-  state.logs.unshift(`[${timestamp}] ${message}`);
-  updateLogs();
-};
-
-const simulateImport = (action) => {
-  if (state.importRunning) {
-    showFeedback('Uma ação de importação já está em andamento.');
-    return;
-  }
-
-  state.importRunning = true;
-  selectors.importStatus.textContent = `${action} em progresso`;
-  selectors.importProgress.style.width = '0%';
-  selectors.importLog.textContent = '';
-  let progress = 0;
-
-  const interval = setInterval(() => {
-    progress += 10;
-    selectors.importProgress.style.width = `${progress}%`;
-    selectors.importLog.textContent += `${action}... ${progress}% concluído.
-`;
-    addLog(`${action} - ${progress}%`);
-
-    if (progress >= 100) {
-      clearInterval(interval);
-      state.importRunning = false;
-      selectors.importStatus.textContent = 'Base atualizada';
-      selectors.importLastUpdate.textContent = new Date().toLocaleString('pt-BR');
-      selectors.importDuration.textContent = '19m 12s';
-      addLog(`${action} concluído com sucesso.`);
-      updateImportInfo();
-      showFeedback(`${action} concluído.`);
-    }
-  }, 220);
 };
 
 const initNavigation = () => {
